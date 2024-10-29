@@ -235,7 +235,7 @@ def start_menu():
     screen.fill(WHITE)
     start_text = Text("Welcome to ANGLE", WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2 - 100, size=40, color=GREEN, font="freesansbold.ttf")
     game_description_text = Text("Angle your shot to hit the enemy", WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2 - 50, size=20, color=BLACK, font="freesansbold.ttf")
-    tutorial_text = Text("Use arrow keys to move ,space to shoot and L_CTRL to charge and shoot", WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2 - 20, size=20, color=RED, font="freesansbold.ttf")
+    tutorial_text = Text("Use arrow keys to move and space to shoot", WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2 - 20, size=20, color=RED, font="freesansbold.ttf")
 
     start_button = Button("Start", WINDOW_WIDTH / 2 - 100, WINDOW_HEIGHT / 2 + 40, 200, 50)
     quit_button = Button("Quit", WINDOW_WIDTH / 2 - 100, WINDOW_HEIGHT / 2 + 110, 200, 50)
@@ -347,14 +347,12 @@ def main_game_loop():
                 if event.key == pygame.K_LCTRL:
                     if not shooting:
                         charging = False
-                        # current_player.shoot(current_player.angle(game_map))
                         shooting = True
                         bullet = Bullet(current_player.rect.centerx, current_player.rect.centery, bullet_image)
 
 
 
         screen.fill(WHITE)
-        print(current_player.power)
         if shooting:
             move_down = move_up = move_left = move_right = current_player.jumping = False
             current_player.shoot(bullet, game_map)
@@ -375,7 +373,6 @@ def main_game_loop():
             character_angle = character.angle(game_map)
             character.draw(character_angle, current_player, (move_left or move_right), shooting)
 
-        print(current_player.mask.overlap(game_map.mask, (game_map.rect.x - current_player.rect.x, game_map.rect.y - current_player.rect.y)))
         game_map.draw()
         pygame.display.update()
         clock.tick(60)
