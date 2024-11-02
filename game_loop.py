@@ -1,9 +1,12 @@
 import pygame
 from settings import *
+from random import uniform
 from character import Character
 from game_map import GameMap
 from bullet import Bullet
+from particle import Particle
 
+particle_groups=pygame.sprite.Group()
 def main_game_loop(screen, clock):
     character_display_image = pygame.image.load("./image/clipart1580513.png").convert_alpha()
     character_real_image = pygame.image.load("./image/clipart1580513 (1).png").convert_alpha()
@@ -60,6 +63,12 @@ def main_game_loop(screen, clock):
             if (current_character.check_collision_with_game_map_y(game_map)):
                 current_character.move(game_map)
 
+    def spawm_particle(pos):
+        for _ in range(20):
+            direction = pygame.math.Vector2(uniform(-1, 1), uniform(-1, 1))
+            direction = direction.normalize()
+            speed = uniform(0.25,0.75)
+            Particle(particle_groups, pos, direction, speed, 2)
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -110,12 +119,14 @@ def main_game_loop(screen, clock):
             if bullet.rect.right < 0 or bullet.rect.left > GAME_MAP_WIDTH or bullet.rect.top > WINDOW_HEIGHT or bullet.mask.overlap(game_map.mask, (game_map.rect.x - bullet.rect.x, game_map.rect.y - bullet.rect.y)):
                 if pygame.sprite.collide_mask(bullet, game_map):
                     game_map.update_from_explosion(bullet.rect.center)
+                    spawm_particle(bullet.rect.center)
                     bullet.kill()
                 bullet.kill()
                 shooting = False
                 current_player.power = 0
                 switch_turn()
-
+        particle_groups.update()
+        particle_groups.draw(screen)
         characters.update(game_map)
         handle_movement(current_player)
         for character in characters:
