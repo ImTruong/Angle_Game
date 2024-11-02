@@ -131,7 +131,7 @@ def main_game_loop(screen, clock):
         handle_movement(current_player)
         for character in characters:
             character_angle = character.angle(game_map)
-            character.draw(screen, character_angle, current_player, (move_left or move_right), shooting, character_angle_line_image)
+            character.draw(screen, character_angle, current_player, (move_left or move_right), shooting, character_angle_line_image,charging)
 
         game_map.draw(screen)
         pygame.display.update()

@@ -10,18 +10,13 @@ class SpriteAnimated(pg.sprite.Sprite):
         self.num_frames=0
         self.current_frame=0
 
-        self.idle = [pg.image.load('./image/clipart1580513.png')]
+        self.shooting = [pg.image.load('./image/clipart1580513.png')]
+        self.idle=[pg.image.load('./image/sprite_worm_tile006.png')]
         self.move = [pg.image.load('./image/sprite_worm_tile006.png'),pg.image.load('./image/sprite_worm_tile007.png'),
                         pg.image.load('./image/sprite_worm_tile008.png'),pg.image.load('./image/sprite_worm_tile009.png'),
                         pg.image.load('./image/sprite_worm_tile010.png'),pg.image.load('./image/sprite_worm_tile011.png')]
 
-
-        self.jump_left = [pg.image.load('./image/sprite_worm_tile012.png'), pg.image.load('./image/sprite_worm_tile013.png'),
-                          pg.image.load('./image/sprite_worm_tile014.png'), pg.image.load('./image/sprite_worm_tile015.png'),
-                          pg.image.load('./image/sprite_worm_tile016.png'), pg.image.load('./image/sprite_worm_tile017.png'),
-                          pg.image.load('./image/sprite_worm_tile018.png'),pg.image.load('./image/sprite_worm_tile026.png')]
-
-        self.jump_right = [pg.image.load('./image/sprite_worm_tile019.png'), pg.image.load('./image/sprite_worm_tile020.png'),
+        self.jump = [pg.image.load('./image/sprite_worm_tile019.png'), pg.image.load('./image/sprite_worm_tile020.png'),
                           pg.image.load('./image/sprite_worm_tile021.png'), pg.image.load('./image/sprite_worm_tile022.png'),
                           pg.image.load('./image/sprite_worm_tile023.png'), pg.image.load('./image/sprite_worm_tile024.png'),
                           pg.image.load('./image/sprite_worm_tile025.png'),pg.image.load('./image/sprite_worm_tile027.png')]
@@ -40,15 +35,16 @@ class SpriteAnimated(pg.sprite.Sprite):
         if self.state == "move":
             self.animation = self.move
             self.num_frames = len(self.move)
-        elif self.state == "jump_left":
-            self.animation = self.jump_left
-            self.num_frames = len(self.jump_left)
-        elif self.state == "jump_right":
-            self.animation = self.jump_right
-            self.num_frames = len(self.jump_right)
+
+        elif self.state == "jump":
+            self.animation = self.jump
+            self.num_frames = len(self.jump)
         elif self.state=="idle":
             self.animation=self.idle
             self.num_frames=len(self.idle)
+        elif self.state=="shooting":
+            self.animation = self.shooting
+            self.num_frames = len(self.shooting)
 
     def setCenterPos(self,center:tuple[int,int]):
         self.rect.center=center

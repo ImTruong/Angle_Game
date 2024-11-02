@@ -47,12 +47,12 @@ class Character(pygame.sprite.Sprite):
         slope = (left_y_point - right_y_point) / (self.rect.left - self.rect.right)
         return -math.atan(slope) * 180 / (math.pi)
 
-    def draw(self, screen, angle, current_player, moving, shooting, character_angle_line_image):
+    def draw(self, screen, angle, current_player, moving, shooting, character_angle_line_image,charging):
         self.display_image=self.character_animation.image
         flipped_image = pygame.transform.flip(self.display_image, not self.face_right, False)
         rotated_image = pygame.transform.rotate(flipped_image, angle)
         new_rect = rotated_image.get_rect(center=self.rect.center)
-        if not moving and current_player == self and not shooting and not self.jumping and not self.falling:
+        if not moving and current_player == self and not shooting and not self.jumping and not self.falling and not charging:
             self.character_animation.state="idle"
             rotated_angle = angle + self.shoot_angle
             if not self.face_right:
@@ -69,13 +69,16 @@ class Character(pygame.sprite.Sprite):
             self.character_animation.state = "move"
             self.character_animation.setCenterPos(self.rect.center)
         elif self.jumping and current_player == self and not shooting:
-            self.character_animation.state="jump_right"
+            self.character_animation.state="jump"
             self.character_animation.setCenterPos(self.rect.center)
         elif self.falling and not shooting:
-            self.character_animation.state="jump_right"
+            self.character_animation.state="jump"
             self.character_animation.setCenterPos(self.rect.center)
-        elif not self.falling and not moving and not shooting and not self.jumping:
+        elif not self.falling and not moving and not charging and not self.jumping:
             self.character_animation.state="idle"
+            self.character_animation.setCenterPos(self.rect.center)
+        elif charging and current_player == self:
+            self.character_animation.state = "shooting"
             self.character_animation.setCenterPos(self.rect.center)
         screen.blit(rotated_image, new_rect.topleft)
 
