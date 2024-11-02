@@ -12,8 +12,8 @@ def main_game_loop(screen, clock):
     character_angle_line_image = pygame.transform.scale(character_angle_line_image, (89, 10))
     bullet_image = pygame.image.load("./image/CannonBullet1.png").convert_alpha()
 
-    player1 = Character(character_display_image, character_real_image, 400, 0)
-    player2 = Character(character_display_image, character_real_image, 600, 0)
+    player1 = Character(character_display_image, character_real_image,screen ,400, 0)
+    player2 = Character(character_display_image, character_real_image,screen, 600, 0)
 
     game_map = GameMap(0, 0, game_map_image)
 

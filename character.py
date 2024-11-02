@@ -1,10 +1,13 @@
 import pygame
 import math
+
+from Animation import SpriteAnimated
+
 from settings import *
 from bullet import Bullet
 
 class Character(pygame.sprite.Sprite):
-    def __init__(self, display_image, real_image, x, y):
+    def __init__(self, display_image, real_image,screen, x, y):
         super().__init__()
         self.display_image = pygame.transform.scale(display_image, (CHARACTER_WIDTH, CHARACTER_HEIGHT))
         self.real_image = pygame.transform.scale(real_image, (CHARACTER_WIDTH, CHARACTER_HEIGHT))
@@ -15,9 +18,14 @@ class Character(pygame.sprite.Sprite):
         self.speed = 0
         self.on_ground = False
         self.jumping = False
+        self.falling = False
         self.velocity = BASE_VELOCITY
         self.power = 0
         self.shooting = False
+
+        self.screen=screen
+        self.character_animation = SpriteAnimated(screen,"idle",0.1)
+
 
     def angle(self, game_map):
         if not self.on_ground:
@@ -40,10 +48,12 @@ class Character(pygame.sprite.Sprite):
         return -math.atan(slope) * 180 / (math.pi)
 
     def draw(self, screen, angle, current_player, moving, shooting, character_angle_line_image):
+        self.display_image=self.character_animation.image
         flipped_image = pygame.transform.flip(self.display_image, not self.face_right, False)
         rotated_image = pygame.transform.rotate(flipped_image, angle)
         new_rect = rotated_image.get_rect(center=self.rect.center)
-        if not moving and current_player == self and not shooting:
+        if not moving and current_player == self and not shooting and not self.jumping and not self.falling:
+            self.character_animation.state="idle"
             rotated_angle = angle + self.shoot_angle
             if not self.face_right:
                 rotated_angle = angle - self.shoot_angle
@@ -55,16 +65,30 @@ class Character(pygame.sprite.Sprite):
                 cover_rect = pygame.Rect(rotated_angle_line_image.get_width() // 2, 0, rotated_angle_line_image.get_width() // 2, rotated_angle_line_image.get_height())
             pygame.draw.rect(rotated_angle_line_image, (255, 255, 255, 0), cover_rect)
             screen.blit(rotated_angle_line_image, angle_line_rect.topleft)
+        elif moving and current_player == self and not shooting and not self.jumping and not self.falling:
+            self.character_animation.state = "move"
+            self.character_animation.setCenterPos(self.rect.center)
+        elif self.jumping and current_player == self and not shooting:
+            self.character_animation.state="jump_right"
+            self.character_animation.setCenterPos(self.rect.center)
+        elif self.falling and not shooting:
+            self.character_animation.state="jump_right"
+            self.character_animation.setCenterPos(self.rect.center)
+        elif not self.falling and not moving and not shooting and not self.jumping:
+            self.character_animation.state="idle"
+            self.character_animation.setCenterPos(self.rect.center)
         screen.blit(rotated_image, new_rect.topleft)
 
     def move(self, game_map):
         self.rect.x += self.speed
+
         if self.rect.x < game_map.rect.left:
             self.rect.x = game_map.rect.left
         if self.rect.left > game_map.rect.right:
             self.rect.left = game_map.rect.right
 
     def update(self, game_map):
+        self.character_animation.update()
         self.handle_falling(game_map)
         self.check_on_ground(game_map)
         self.jump(game_map)
@@ -85,6 +109,9 @@ class Character(pygame.sprite.Sprite):
         if self.mask.overlap(game_map.mask, (game_map.rect.x - self.rect.x, game_map.rect.y - self.rect.y)):
             self.velocity = BASE_VELOCITY
             self.on_ground = True
+            self.falling = False
+        else :
+            self.falling = True
 
     def jump(self, game_map):
         if self.jumping:
