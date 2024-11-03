@@ -4,6 +4,8 @@ import pygame
 
 pygame.init()
 
+BULLET_DAMAGE = 25
+
 WINDOW_WIDTH = 1500
 WINDOW_HEIGHT = 800
 CHARACTER_WIDTH = 40
@@ -69,6 +71,8 @@ class Character(pygame.sprite.Sprite):
         self.velocity = BASE_VELOCITY
         self.power = 0
         self.shooting = False
+        self.HP = 100
+        self.max_HP = 100
 
     def angle(self, game_map):
         if not self.on_ground:
@@ -112,6 +116,21 @@ class Character(pygame.sprite.Sprite):
             screen.blit(rotated_angle_line_image, angle_line_rect.topleft)
         screen.blit(rotated_image, new_rect.topleft)
 
+
+    def draw_health_bar(self, screen):
+        bar_width = 50  # Chiều rộng của thanh máu
+        bar_height = 6  # Chiều cao của thanh máu
+        bar_x = self.rect.centerx - bar_width // 2  # Tâm thanh máu dưới chân nhân vật
+        bar_y = self.rect.bottom + 5  # Cách phần đáy nhân vật 5px
+
+        # Tính toán chiều dài thanh máu dựa trên HP hiện tại
+        current_health_width = int(bar_width * (self.HP / self.max_HP))
+
+        # Vẽ thanh nền (màu xám)
+        pygame.draw.rect(screen, (128, 128, 128), (bar_x, bar_y, bar_width, bar_height))
+
+        # Vẽ thanh máu (màu xanh lá)
+        pygame.draw.rect(screen, (0, 255, 0), (bar_x, bar_y, current_health_width, bar_height))
 
     def move(self, game_map):
         self.rect.x += self.speed
@@ -184,13 +203,47 @@ class Character(pygame.sprite.Sprite):
         y = y0 + (-V * math.sin(theta) * t + accel * t ** 2 / 2)
         bullet.update(x, y)
 
+
+    #check for collision with bullet
+    def check_collision_with_bullet(self, bullet):
+        # Kiểm tra nếu có sự chồng lấn giữa mask của đạn và mask của nhân vật
+        if self.mask.overlap(bullet.mask, (bullet.rect.x - self.rect.x, bullet.rect.y - self.rect.y)):
+            return True
+        return False
+
+    # vẽ thanh power
+    def draw_power_bar(self):
+        power_bar_width = 300  # chiều rộng của thanh power
+        power_bar_height = 30  # chiều cao của thanh power
+        power_ratio = self.power / 100
+
+        # vị trí của thanh power
+        power_bar_x = (WINDOW_WIDTH - power_bar_width) // 2
+        power_bar_y = WINDOW_HEIGHT - 100
+
+        # vẽ thanh nền màu xám
+        pygame.draw.rect(screen, (169, 169, 169), (power_bar_x, power_bar_y, power_bar_width, power_bar_height))
+        # vẽ thanh power màu vàng
+        pygame.draw.rect(screen, (255, 255, 0),
+                         (power_bar_x, power_bar_y, power_bar_width * power_ratio, power_bar_height))
+
+        # Vẽ các vạch số từ 0 đến 100
+        font = pygame.font.Font(None, 24)
+        for i in range(0, 101, 10):  # từ 0 đến 100, với bước là 10
+            x_position = power_bar_x + (i / 100) * power_bar_width
+            text_surface = font.render(str(i), True, BLACK)
+            text_rect = text_surface.get_rect(center=(x_position, power_bar_y + power_bar_height + 10))  # vị trí chỉ số
+            screen.blit(text_surface, text_rect.topleft)
 class Bullet(pygame.sprite.Sprite):
-    def __init__(self, x, y, image):
+    def __init__(self, x, y, image, shooter):
         super().__init__()
         self.image = pygame.transform.scale(image, (20, 20))
         self.rect = self.image.get_rect(center=(x, y))
         self.mask = pygame.mask.from_surface(self.image)
         self.time = 0
+        self.hit_target = False
+        self.shooter = shooter
+        self.count = 0
 
     def update(self,x,y):
         self.rect.x = x
@@ -238,6 +291,7 @@ def start_menu():
     tutorial_text = Text("Use arrow keys to move and space to shoot", WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2 - 20, size=20, color=RED, font="freesansbold.ttf")
 
     start_button = Button("Start", WINDOW_WIDTH / 2 - 100, WINDOW_HEIGHT / 2 + 40, 200, 50)
+    start_over_btn = Button("Start Over", WINDOW_WIDTH / 2 - 100, WINDOW_HEIGHT / 2 + 40, 200, 50)
     quit_button = Button("Quit", WINDOW_WIDTH / 2 - 100, WINDOW_HEIGHT / 2 + 110, 200, 50)
 
     while True:
@@ -261,6 +315,34 @@ def start_menu():
                 quit()
 
 
+def end_game_screen(winner):
+    global game_over
+
+    # Vẽ thông báo người thắng
+    font = pygame.font.SysFont(None, 60)
+    text = font.render(f"{winner} Wins!", True, (205,133,63))
+    text_rect = text.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 - 50))
+
+    # Tạo các nút
+    start_over_button = Button("Start Over", WINDOW_WIDTH // 2 - 100, WINDOW_HEIGHT // 2 + 20, 200, 50,
+                               font_color=BLACK)
+
+    # Hiển thị màn hình kết thúc cho đến khi nhấn nút
+    while True:
+        screen.fill(WHITE)
+        screen.blit(text, text_rect)
+        start_over_button.draw()
+
+        pygame.display.flip()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+            elif start_over_button.is_clicked(event):
+                game_over = False
+                return "restart"
+
 def main_game_loop():
     player1 = Character(character_display_image, character_real_image, 400, 0)
     player2 = Character(character_display_image, character_real_image, 600, 0)
@@ -281,6 +363,10 @@ def main_game_loop():
     shooting = False
     charging = False
     charging_status = "increasing"
+    game_over = False
+    time_limit = 15  # mỗi người có 15 giây để chơi
+    start_ticks = pygame.time.get_ticks()
+    time_left_text = Text("Time Left: 15", 100, 50, size=30, color=BLACK)  # hiển thị thời gian
 
     def switch_turn():
         nonlocal current_player
@@ -309,7 +395,11 @@ def main_game_loop():
             if (current_character.check_collision_with_game_map_y(game_map)):
                 current_character.move(game_map)
 
-    while True:
+    while not game_over:
+        seconds = (pygame.time.get_ticks() - start_ticks) / 1000  # Tính toán thời gian đã trôi
+        time_left = time_limit - seconds  # Tính thời gian còn lại
+        time_left_text.text = time_left_text.font.render(f"Time Left: {int(time_left)}", True,
+                                                         BLACK)  # Cập nhật thời gian
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -348,32 +438,68 @@ def main_game_loop():
                     if not shooting:
                         charging = False
                         shooting = True
-                        bullet = Bullet(current_player.rect.centerx, current_player.rect.centery, bullet_image)
-
-
+                        bullet = Bullet(current_player.rect.centerx, current_player.rect.centery, bullet_image,current_player)
 
         screen.fill(WHITE)
-        if shooting:
+        game_map.draw()
+
+        if time_left <= 0:  # nếu đã thời gian chơi
+            move_down = move_up = move_left = move_right = current_player.jumping = False
+            start_ticks = pygame.time.get_ticks()  # đặt lại thời gian bắt đầu lượt
+            time_left = time_limit  # đặt lại thời gian còn lại
+            switch_turn()
+        elif shooting:
+            shooted = False
             move_down = move_up = move_left = move_right = current_player.jumping = False
             current_player.shoot(bullet, game_map)
             bullet.draw()
             bullet.time += BULLET_SPEED
-            if bullet.rect.right < 0 or bullet.rect.left > GAME_MAP_WIDTH or bullet.rect.top > WINDOW_HEIGHT or bullet.mask.overlap(game_map.mask, (game_map.rect.x - bullet.rect.x, game_map.rect.y - bullet.rect.y)):
+            # Kiểm tra va chạm với địa hình hoặc ra khỏi màn hình
+            if bullet.rect.right < 0 or bullet.rect.left > GAME_MAP_WIDTH or bullet.rect.top > WINDOW_HEIGHT or bullet.mask.overlap(
+                    game_map.mask, (game_map.rect.x - bullet.rect.x, game_map.rect.y - bullet.rect.y)):
                 if pygame.sprite.collide_mask(bullet, game_map):
                     game_map.update_from_explosion(bullet.rect.center)
-                    bullet.kill()
+                start_ticks = pygame.time.get_ticks()  # đặt lại thời gian bắt đầu lượt
+                time_left = time_limit  # đặt lại thời gian còn lại
                 bullet.kill()
                 shooting = False
                 current_player.power = 0
-                switch_turn()
+                if not shooted :
+                    switch_turn()
+                    shooted = True
+                print("Trung dia hinh")
 
+            # Kiểm tra va chạm với nhân vật
+            for character in characters:
+                if character != current_player and character.check_collision_with_bullet(bullet) and not bullet.hit_target:
+                    bullet.hit_target = True
+                    character.HP -= BULLET_DAMAGE
+                    if character.HP <= 0:
+                        winner = "Player 1" if character == player2 else "Player 2"
+                        end_game_screen(winner)
+                        game_over = True
+                        break
+                    # Gây nổ địa hình tại vị trí của nhân vật khi bị trúng đạn
+                    game_map.update_from_explosion(character.rect.center)
+                    bullet.kill()
+                    shooting = False
+                    current_player.power = 0
+                    print("Trung nguoi")
+                    if not shooted :
+                        switch_turn()
+                        shooted = True
+                    break
+            shooted = False
         characters.update(game_map)
         handle_movement(current_player)
+        # Vẽ nhân vật
         for character in characters:
             character_angle = character.angle(game_map)
             character.draw(character_angle, current_player, (move_left or move_right), shooting)
-
-        game_map.draw()
+            character.draw_health_bar(screen)
+            if character == current_player:
+                character.draw_power_bar()  # vẽ thanh power
+        time_left_text.draw()
         pygame.display.update()
         clock.tick(60)
 
