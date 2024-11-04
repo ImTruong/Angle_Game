@@ -1,4 +1,5 @@
 import math
+from random import uniform
 
 import pygame
 
@@ -39,6 +40,71 @@ character_angle_line_image = pygame.image.load("./image/Dotted-Line-PNG-Pic.png"
 character_angle_line_image = pygame.transform.scale(character_angle_line_image, (89, 10))
 bullet_image = pygame.image.load("./image/CannonBullet1.png").convert_alpha()
 
+class SpriteAnimated(pygame.sprite.Sprite):
+
+    def __init__(self,surface: pygame.surface,state:str,time_per_frame:float=0.2):
+        super().__init__()
+        self.surface=surface
+        self.state = state
+
+        self.num_frames=0
+        self.current_frame=0
+
+        self.shooting = [pygame.image.load('./image/clipart1580513.png')]
+        self.idle=[pygame.image.load('./image/sprite_worm_tile006.png')]
+        self.move = [pygame.image.load('./image/sprite_worm_tile006.png'),pygame.image.load('./image/sprite_worm_tile007.png'),
+                        pygame.image.load('./image/sprite_worm_tile008.png'),pygame.image.load('./image/sprite_worm_tile009.png'),
+                        pygame.image.load('./image/sprite_worm_tile010.png'),pygame.image.load('./image/sprite_worm_tile011.png')]
+
+        self.jump = [pygame.image.load('./image/sprite_worm_tile019.png'), pygame.image.load('./image/sprite_worm_tile020.png'),
+                          pygame.image.load('./image/sprite_worm_tile021.png'), pygame.image.load('./image/sprite_worm_tile022.png'),
+                          pygame.image.load('./image/sprite_worm_tile023.png'), pygame.image.load('./image/sprite_worm_tile024.png'),
+                          pygame.image.load('./image/sprite_worm_tile025.png'),pygame.image.load('./image/sprite_worm_tile027.png')]
+        self.animation=[]
+
+        self.prev_tick=0 # milliseconds
+        self.current_tick=0 # milliseconds
+        self.time_per_frames=time_per_frame # seconds
+
+        self.setNumFrame()
+        self.image=self.animation[self.current_frame]
+        self.setScaleImg()
+        self.rect=self.image.get_rect()
+
+    def setNumFrame(self):
+        if self.state == "move":
+            self.animation = self.move
+            self.num_frames = len(self.move)
+
+        elif self.state == "jump":
+            self.animation = self.jump
+            self.num_frames = len(self.jump)
+        elif self.state=="idle":
+            self.animation=self.idle
+            self.num_frames=len(self.idle)
+        elif self.state=="shooting":
+            self.animation = self.shooting
+            self.num_frames = len(self.shooting)
+
+    def setCenterPos(self,center:tuple[int,int]):
+        self.rect.center=center
+
+    def setScaleImg(self):
+        img = self.animation[self.current_frame]
+        self.image = pygame.transform.scale(img, (40,40))
+
+    def update(self):
+        self.current_tick = pygame.time.get_ticks()
+        self.setNumFrame()
+        if self.current_tick-self.prev_tick>=self.time_per_frames*1000:
+            self.current_frame+=1
+            self.current_frame%=self.num_frames
+            self.prev_tick=self.current_tick
+            self.setScaleImg()
+
+    def draw(self):
+        self.surface.blit(self.image,self.rect)
+
 class GameMap(pygame.sprite.Sprite):
     def __init__(self, x, y, image):
         super().__init__()
@@ -73,33 +139,37 @@ class Character(pygame.sprite.Sprite):
         self.shooting = False
         self.HP = 100
         self.max_HP = 100
+        self.screen = screen
+        self.character_animation = SpriteAnimated(screen, "idle", 0.1)
 
     def angle(self, game_map):
         if not self.on_ground:
             return 0
         for i in range(0, game_map.rect.bottom):
-            overlap_pos = self.mask.overlap(game_map.mask,(game_map.rect.x - self.rect.x, game_map.rect.y - self.rect.y - i))
+            overlap_pos = self.mask.overlap(game_map.mask,
+                                            (game_map.rect.x - self.rect.x, game_map.rect.y - self.rect.y - i))
             if overlap_pos:
                 break
         left_y_point = 0
         right_y_point = 0
-        for i in range(self.rect.centery,game_map.rect.bottom):
+        for i in range(self.rect.centery, game_map.rect.bottom):
             if game_map.mask.get_at((self.rect.left, i)):
                 left_y_point = i
                 break
-        for i in range(self.rect.centery,game_map.rect.bottom):
+        for i in range(self.rect.centery, game_map.rect.bottom):
             if game_map.mask.get_at((self.rect.right, i)):
                 right_y_point = i
                 break
         slope = (left_y_point - right_y_point) / (self.rect.left - self.rect.right)
-
         return -math.atan(slope) * 180 / (math.pi)
 
-    def draw(self, angle, current_player, moving, shooting):
+    def draw(self, screen, angle, current_player, moving, shooting, character_angle_line_image, charging):
+        self.display_image = self.character_animation.image
         flipped_image = pygame.transform.flip(self.display_image, not self.face_right, False)
         rotated_image = pygame.transform.rotate(flipped_image, angle)
         new_rect = rotated_image.get_rect(center=self.rect.center)
-        if not moving and current_player == self and not shooting:
+        if not moving and current_player == self and not shooting and not self.jumping and not self.falling and not charging:
+            self.character_animation.state = "idle"
             rotated_angle = angle + self.shoot_angle
             if not self.face_right:
                 rotated_angle = angle - self.shoot_angle
@@ -114,8 +184,102 @@ class Character(pygame.sprite.Sprite):
                                          rotated_angle_line_image.get_height())
             pygame.draw.rect(rotated_angle_line_image, (255, 255, 255, 0), cover_rect)
             screen.blit(rotated_angle_line_image, angle_line_rect.topleft)
+        elif moving and current_player == self and not shooting and not self.jumping and not self.falling:
+            self.character_animation.state = "move"
+            self.character_animation.setCenterPos(self.rect.center)
+        elif self.jumping and current_player == self and not shooting:
+            self.character_animation.state = "jump"
+            self.character_animation.setCenterPos(self.rect.center)
+        elif self.falling and not shooting:
+            self.character_animation.state = "jump"
+            self.character_animation.setCenterPos(self.rect.center)
+        elif not self.falling and not moving and not charging and not self.jumping:
+            self.character_animation.state = "idle"
+            self.character_animation.setCenterPos(self.rect.center)
+        elif charging and current_player == self:
+            self.character_animation.state = "shooting"
+            self.character_animation.setCenterPos(self.rect.center)
         screen.blit(rotated_image, new_rect.topleft)
 
+    def move(self, game_map):
+        self.rect.x += self.speed
+
+        if self.rect.x < game_map.rect.left:
+            self.rect.x = game_map.rect.left
+        if self.rect.left > game_map.rect.right:
+            self.rect.left = game_map.rect.right
+
+    def update(self, game_map):
+        self.character_animation.update()
+        self.handle_falling(game_map)
+        self.check_on_ground(game_map)
+        self.jump(game_map)
+
+    def handle_falling(self, game_map):
+        if not self.jumping and not self.mask.overlap(game_map.mask,
+                                                      (game_map.rect.x - self.rect.x, game_map.rect.y - self.rect.y)):
+            down = 0
+            for i in range(0, int(self.velocity)):
+                down = i
+                if self.mask.overlap(game_map.mask, (game_map.rect.x - self.rect.x, game_map.rect.y - self.rect.y - i)):
+                    break
+            self.rect.y += down
+            if self.velocity + GRAVITY < MAX_FALL_SPEED:
+                self.velocity += GRAVITY
+            self.on_ground = False
+
+    def check_on_ground(self, game_map):
+        if self.mask.overlap(game_map.mask, (game_map.rect.x - self.rect.x, game_map.rect.y - self.rect.y)):
+            self.velocity = BASE_VELOCITY
+            self.on_ground = True
+            self.falling = False
+        else:
+            self.falling = True
+
+    def jump(self, game_map):
+        if self.jumping:
+            if self.velocity >= JUMP_HEIGHT or self.mask.overlap(game_map.mask, (
+            game_map.rect.x - self.rect.x, game_map.rect.y - self.rect.y + self.velocity)):
+                self.jumping = False
+                self.velocity = JUMP_HEIGHT
+            else:
+                self.rect.y -= self.velocity
+                self.velocity += GRAVITY
+
+    def check_collision_with_game_map_y(self, game_map):
+        movable = False
+        sign = 1 if self.speed > 0 else -1
+        self.speed = DEFAULT_CHARACTER_SPEED * sign
+        for i in range(1, int(abs(self.speed) + 1)):
+            overlap_pos = self.mask.overlap(game_map.mask,
+                                            (game_map.rect.x - self.rect.x - i * sign, game_map.rect.y - self.rect.y))
+            if overlap_pos == None or CHARACTER_HEIGHT - overlap_pos[1] <= HEIGHT_DIFF_ALLOWED:
+                movable = True
+                speed = i * sign
+                if overlap_pos != None:
+                    self.rect.y -= (CHARACTER_HEIGHT - overlap_pos[1])
+        return movable
+
+    def shoot(self, bullet, game_map):
+        angle = self.shoot_angle
+        if self.face_right:
+            angle += self.angle(game_map)
+        else:
+            angle += -self.angle(game_map)
+        direction = 1 if self.face_right else -1
+        theta, accel, t = angle * math.pi / 180, BULLET_ACCEL, bullet.time
+        scale = POWER_SCALE
+        V = scale * self.power
+        x0, y0 = self.rect.center
+        x = x0 + direction * V * math.cos(theta) * t
+        y = y0 + (-V * math.sin(theta) * t + accel * t ** 2 / 2)
+        bullet.update(x, y)
+
+    def check_collision_with_bullet(self, bullet):
+        # Kiểm tra nếu có sự chồng lấn giữa mask của đạn và mask của nhân vật
+        if self.mask.overlap(bullet.mask, (bullet.rect.x - self.rect.x, bullet.rect.y - self.rect.y)):
+            return True
+        return False
 
     def draw_health_bar(self, screen):
         bar_width = 50  # Chiều rộng của thanh máu
@@ -131,86 +295,6 @@ class Character(pygame.sprite.Sprite):
 
         # Vẽ thanh máu (màu xanh lá)
         pygame.draw.rect(screen, (0, 255, 0), (bar_x, bar_y, current_health_width, bar_height))
-
-    def move(self, game_map):
-        self.rect.x += self.speed
-        if self.rect.x < game_map.rect.left:
-            self.rect.x = game_map.rect.left
-        if self.rect.left > game_map.rect.right:
-            self.rect.left = game_map.rect.right
-
-    def update(self, game_map):
-        self.handle_falling(game_map)
-        self.check_on_ground(game_map)
-        self.jump(game_map)
-
-
-    def handle_falling(self, game_map):
-        if not self.jumping and not self.mask.overlap(
-                game_map.mask, (game_map.rect.x - self.rect.x, game_map.rect.y - self.rect.y)):
-            down = 0
-            for i in range(0, int(self.velocity)):
-                down = i
-                if self.mask.overlap(game_map.mask,
-                                     (game_map.rect.x - self.rect.x, game_map.rect.y - self.rect.y - i)):
-                    break
-            self.rect.y += down
-            if self.velocity + GRAVITY < MAX_FALL_SPEED:
-                self.velocity += GRAVITY
-            self.on_ground = False
-
-    def check_on_ground(self, game_map):
-        if self.mask.overlap(game_map.mask, (game_map.rect.x - self.rect.x, game_map.rect.y - self.rect.y)):
-            self.velocity = BASE_VELOCITY
-            self.on_ground = True
-
-    def jump(self, game_map):
-        if self.jumping:
-            if self.velocity >= JUMP_HEIGHT or self.mask.overlap(
-                    game_map.mask, (game_map.rect.x - self.rect.x, game_map.rect.y - self.rect.y + self.velocity)):
-                self.jumping = False
-                self.velocity = JUMP_HEIGHT
-            else:
-                self.rect.y -= self.velocity
-                self.velocity += GRAVITY
-
-    def check_collision_with_game_map_y(self, game_map):
-        movable = False
-        sign = 1 if self.speed > 0 else -1
-        self.speed = DEFAULT_CHARACTER_SPEED * sign
-        for i in range(1, int(abs(self.speed) + 1)):
-            overlap_pos = self.mask.overlap(game_map.mask, (
-            game_map.rect.x - self.rect.x - i * sign, game_map.rect.y - self.rect.y))
-            if overlap_pos == None or CHARACTER_HEIGHT - overlap_pos[1] <= HEIGHT_DIFF_ALLOWED:
-                movable = True
-                speed = i * sign
-                if overlap_pos != None:
-                    self.rect.y -= (CHARACTER_HEIGHT - overlap_pos[1])
-        return movable
-
-    def shoot(self, bullet, game_map):
-        angle = self.shoot_angle
-        if self.face_right:
-            angle += self.angle(game_map)
-        else:
-            angle += -self.angle(game_map)
-        direction = 1 if self.face_right else -1
-        theta, accel, t = angle * math.pi / 180 , BULLET_ACCEL, bullet.time
-        scale = POWER_SCALE
-        V = scale * self.power
-        x0, y0 = self.rect.center
-        x = x0 + direction * V * math.cos(theta) * t
-        y = y0 + (-V * math.sin(theta) * t + accel * t ** 2 / 2)
-        bullet.update(x, y)
-
-
-    #check for collision with bullet
-    def check_collision_with_bullet(self, bullet):
-        # Kiểm tra nếu có sự chồng lấn giữa mask của đạn và mask của nhân vật
-        if self.mask.overlap(bullet.mask, (bullet.rect.x - self.rect.x, bullet.rect.y - self.rect.y)):
-            return True
-        return False
-
     # vẽ thanh power
     def draw_power_bar(self):
         power_bar_width = 300  # chiều rộng của thanh power
@@ -251,6 +335,39 @@ class Bullet(pygame.sprite.Sprite):
 
     def draw(self):
         screen.blit(self.image, self.rect.topleft)
+
+
+class Particle(pygame.sprite.Sprite):
+    def __init__(self,groups:pygame.sprite.Group, pos: tuple[int, int], direction: pygame.math.Vector2, speed: float, time_life: int):
+        super().__init__(groups)
+
+        self.pos = pos
+        self.direction = direction
+        self.speed = speed
+        self.time_life = time_life
+
+
+        self.image = pygame.image.load('./image/Fire0.png')
+        self.rect = self.image.get_rect()
+
+        self.current_tick = 0
+        self.start_time = pygame.time.get_ticks()
+
+    def update(self):
+        self.move()
+        self.check_time_life()
+
+    def move(self):
+        self.pos += self.direction * self.speed
+        self.rect.center = self.pos
+
+    def draw(self,surface):
+        surface.blit(self.image,self.rect)
+
+    def check_time_life(self):
+        self.current_tick = pygame.time.get_ticks()
+        if self.current_tick - self.start_time >= self.time_life * 1000:
+            self.kill()
 
 
 
@@ -342,7 +459,7 @@ def end_game_screen(winner):
             elif start_over_button.is_clicked(event):
                 game_over = False
                 return "restart"
-
+particle_groups=pygame.sprite.Group()
 def main_game_loop():
     player1 = Character(character_display_image, character_real_image, 400, 0)
     player2 = Character(character_display_image, character_real_image, 600, 0)
@@ -394,7 +511,12 @@ def main_game_loop():
                 current_character.speed *= -1
             if (current_character.check_collision_with_game_map_y(game_map)):
                 current_character.move(game_map)
-
+    def spawm_particle(pos):
+        for _ in range(20):
+            direction = pygame.math.Vector2(uniform(-1, 1), uniform(-1, 1))
+            direction = direction.normalize()
+            speed = uniform(0.25,0.75)
+            Particle(particle_groups, pos, direction, speed, 2)
     while not game_over:
         seconds = (pygame.time.get_ticks() - start_ticks) / 1000  # Tính toán thời gian đã trôi
         time_left = time_limit - seconds  # Tính thời gian còn lại
@@ -458,7 +580,9 @@ def main_game_loop():
             if bullet.rect.right < 0 or bullet.rect.left > GAME_MAP_WIDTH or bullet.rect.top > WINDOW_HEIGHT or bullet.mask.overlap(
                     game_map.mask, (game_map.rect.x - bullet.rect.x, game_map.rect.y - bullet.rect.y)):
                 if pygame.sprite.collide_mask(bullet, game_map):
+                    spawm_particle(bullet.rect.center)
                     game_map.update_from_explosion(bullet.rect.center)
+                    bullet.kill()
                 start_ticks = pygame.time.get_ticks()  # đặt lại thời gian bắt đầu lượt
                 time_left = time_limit  # đặt lại thời gian còn lại
                 bullet.kill()
@@ -490,12 +614,14 @@ def main_game_loop():
                         shooted = True
                     break
             shooted = False
+        particle_groups.update()
+        particle_groups.draw(screen)
         characters.update(game_map)
         handle_movement(current_player)
         # Vẽ nhân vật
         for character in characters:
             character_angle = character.angle(game_map)
-            character.draw(character_angle, current_player, (move_left or move_right), shooting)
+            character.draw(screen, character_angle, current_player, (move_left or move_right), shooting,character_angle_line_image, charging)
             character.draw_health_bar(screen)
             if character == current_player:
                 character.draw_power_bar()  # vẽ thanh power
