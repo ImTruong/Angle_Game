@@ -1,8 +1,8 @@
-import pygame as pg
+import pygame
 
-class SpriteAnimated(pg.sprite.Sprite):
+class SpriteAnimated(pygame.sprite.Sprite):
 
-    def __init__(self,surface: pg.surface,state:str,time_per_frame:float=0.2):
+    def __init__(self,surface: pygame.surface,state:str,time_per_frame:float=0.2):
         super().__init__()
         self.surface=surface
         self.state = state
@@ -10,16 +10,16 @@ class SpriteAnimated(pg.sprite.Sprite):
         self.num_frames=0
         self.current_frame=0
 
-        self.shooting = [pg.image.load('./image/clipart1580513.png')]
-        self.idle=[pg.image.load('./image/sprite_worm_tile006.png')]
-        self.move = [pg.image.load('./image/sprite_worm_tile006.png'),pg.image.load('./image/sprite_worm_tile007.png'),
-                        pg.image.load('./image/sprite_worm_tile008.png'),pg.image.load('./image/sprite_worm_tile009.png'),
-                        pg.image.load('./image/sprite_worm_tile010.png'),pg.image.load('./image/sprite_worm_tile011.png')]
+        self.shooting = [pygame.image.load('./image/clipart1580513.png')]
+        self.idle=[pygame.image.load('./image/sprite_worm_tile006.png')]
+        self.move = [pygame.image.load('./image/sprite_worm_tile006.png'),pygame.image.load('./image/sprite_worm_tile007.png'),
+                        pygame.image.load('./image/sprite_worm_tile008.png'),pygame.image.load('./image/sprite_worm_tile009.png'),
+                        pygame.image.load('./image/sprite_worm_tile010.png'),pygame.image.load('./image/sprite_worm_tile011.png')]
 
-        self.jump = [pg.image.load('./image/sprite_worm_tile019.png'), pg.image.load('./image/sprite_worm_tile020.png'),
-                          pg.image.load('./image/sprite_worm_tile021.png'), pg.image.load('./image/sprite_worm_tile022.png'),
-                          pg.image.load('./image/sprite_worm_tile023.png'), pg.image.load('./image/sprite_worm_tile024.png'),
-                          pg.image.load('./image/sprite_worm_tile025.png'),pg.image.load('./image/sprite_worm_tile027.png')]
+        self.jump = [pygame.image.load('./image/sprite_worm_tile019.png'), pygame.image.load('./image/sprite_worm_tile020.png'),
+                          pygame.image.load('./image/sprite_worm_tile021.png'), pygame.image.load('./image/sprite_worm_tile022.png'),
+                          pygame.image.load('./image/sprite_worm_tile023.png'), pygame.image.load('./image/sprite_worm_tile024.png'),
+                          pygame.image.load('./image/sprite_worm_tile025.png'),pygame.image.load('./image/sprite_worm_tile027.png')]
         self.animation=[]
 
         self.prev_tick=0 # milliseconds
@@ -51,10 +51,10 @@ class SpriteAnimated(pg.sprite.Sprite):
 
     def setScaleImg(self):
         img = self.animation[self.current_frame]
-        self.image = pg.transform.scale(img, (40,40))
+        self.image = pygame.transform.scale(img, (40,40))
 
     def update(self):
-        self.current_tick = pg.time.get_ticks()
+        self.current_tick = pygame.time.get_ticks()
         self.setNumFrame()
         if self.current_tick-self.prev_tick>=self.time_per_frames*1000:
             self.current_frame+=1

@@ -1,4 +1,6 @@
 import pygame
+
+from main import screen
 from settings import *
 
 class GameMap(pygame.sprite.Sprite):
@@ -7,8 +9,7 @@ class GameMap(pygame.sprite.Sprite):
         self.image = pygame.transform.scale(image, (GAME_MAP_WIDTH, WINDOW_HEIGHT))
         self.rect = self.image.get_rect(topleft=(x, y))
         self.mask = pygame.mask.from_surface(self.image)
-
-    def draw(self, screen):
+    def draw(self):
         screen.blit(self.image, self.rect.topleft)
 
     def move(self, speed):

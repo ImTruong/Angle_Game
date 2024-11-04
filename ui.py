@@ -1,4 +1,6 @@
 import pygame
+
+from main import screen
 from settings import *
 
 class Text:
@@ -7,7 +9,7 @@ class Text:
         self.text = self.font.render(text, True, color)
         self.rect = self.text.get_rect(center=(x, y))
 
-    def draw(self, screen):
+    def draw(self):
         screen.blit(self.text, self.rect)
 
 class Button:
@@ -17,13 +19,13 @@ class Button:
         self.rect = pygame.Rect(x, y, width, height)
         self.text = Text(text, x + width // 2, y + height // 2, font=font, size=font_size, color=font_color)
 
-    def draw(self, screen):
+    def draw(self):
         mouse_pos = pygame.mouse.get_pos()
         if self.rect.collidepoint(mouse_pos):
             pygame.draw.rect(screen, self.hover_color, self.rect)
         else:
             pygame.draw.rect(screen, self.color, self.rect)
-        self.text.draw(screen)
+        self.text.draw()
 
     def is_clicked(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
