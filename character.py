@@ -1,11 +1,6 @@
-import pygame
 import math
-
-from Animation import SpriteAnimated
-from main import screen
-
-from settings import *
-from bullet import Bullet
+from sprite_animated import SpriteAnimated
+from constants import *
 
 class Character(pygame.sprite.Sprite):
     def __init__(self, display_image, real_image, x, y):
@@ -55,19 +50,18 @@ class Character(pygame.sprite.Sprite):
         new_rect = rotated_image.get_rect(center=self.rect.center)
         if not moving and current_player == self and not shooting and not self.jumping and not self.falling and not charging:
             self.character_animation.state = "idle"
-            rotated_angle = angle + self.shoot_angle
-            if not self.face_right:
-                rotated_angle = angle - self.shoot_angle
+            rotated_angle = angle + self.shoot_angle if self.face_right else angle - self.shoot_angle
+
             rotated_angle_line_image = pygame.transform.rotate(character_angle_line_image, rotated_angle)
             angle_line_rect = rotated_angle_line_image.get_rect(center=self.rect.center)
-            if self.face_right:
-                cover_rect = pygame.Rect(0, 0, rotated_angle_line_image.get_width() // 2,
+            if (self.face_right and rotated_angle < 90) or (not self.face_right and rotated_angle < -90):
+                cover_rect = pygame.Rect(0 ,0, rotated_angle_line_image.get_width() // 2,
                                          rotated_angle_line_image.get_height())
             else:
                 cover_rect = pygame.Rect(rotated_angle_line_image.get_width() // 2, 0,
                                          rotated_angle_line_image.get_width() // 2,
                                          rotated_angle_line_image.get_height())
-            pygame.draw.rect(rotated_angle_line_image, (255, 255, 255, 0), cover_rect)
+            pygame.draw.rect(rotated_angle_line_image, (0, 0, 0, 0), cover_rect)
             screen.blit(rotated_angle_line_image, angle_line_rect.topleft)
         elif moving and current_player == self and not shooting and not self.jumping and not self.falling:
             self.character_animation.state = "move"
@@ -155,51 +149,41 @@ class Character(pygame.sprite.Sprite):
         theta, accel, t = angle * math.pi / 180, BULLET_ACCEL, bullet.time
         scale = POWER_SCALE
         V = scale * self.power
+        x0, y0 = self.rect.topleft if not self.face_right else self.rect.topright
         x0, y0 = self.rect.center
         x = x0 + direction * V * math.cos(theta) * t
         y = y0 + (-V * math.sin(theta) * t + accel * t ** 2 / 2)
         bullet.update(x, y)
 
-    def check_collision_with_bullet(self, bullet):
-        # Kiểm tra nếu có sự chồng lấn giữa mask của đạn và mask của nhân vật
-        if self.mask.overlap(bullet.mask, (bullet.rect.x - self.rect.x, bullet.rect.y - self.rect.y)):
+    def check_collision_with_explode_point(self, bullet, explosion_center):
+        explosion_mask = pygame.mask.Mask((EXPLODE_RADIUS * 2, EXPLODE_RADIUS * 2), fill=True)
+        explosion_rect = explosion_mask.get_rect(center=explosion_center)
+
+        if self.mask.overlap(explosion_mask, (explosion_rect.x - self.rect.x, explosion_rect.y - self.rect.y)):
             return True
         return False
 
-    def draw_health_bar(self, screen):
-        bar_width = 50  # Chiều rộng của thanh máu
-        bar_height = 6  # Chiều cao của thanh máu
-        bar_x = self.rect.centerx - bar_width // 2  # Tâm thanh máu dưới chân nhân vật
-        bar_y = self.rect.bottom + 5  # Cách phần đáy nhân vật 5px
+    def draw_health_bar(self):
+        bar_x = self.rect.centerx - BAR_WIDTH // 2
+        bar_y = self.rect.bottom + BAR_OFFSET_Y
 
-        # Tính toán chiều dài thanh máu dựa trên HP hiện tại
-        current_health_width = int(bar_width * (self.HP / self.max_HP))
+        current_health_width = int(BAR_WIDTH * (self.HP / self.max_HP))
 
-        # Vẽ thanh nền (màu xám)
-        pygame.draw.rect(screen, (128, 128, 128), (bar_x, bar_y, bar_width, bar_height))
+        pygame.draw.rect(screen, HEALTH_BAR_BG_COLOR, (bar_x, bar_y, BAR_WIDTH, BAR_HEIGHT))
+        pygame.draw.rect(screen, HEALTH_BAR_COLOR, (bar_x, bar_y, current_health_width, BAR_HEIGHT))
 
-        # Vẽ thanh máu (màu xanh lá)
-        pygame.draw.rect(screen, (0, 255, 0), (bar_x, bar_y, current_health_width, bar_height))
-    # vẽ thanh power
     def draw_power_bar(self):
-        power_bar_width = 300  # chiều rộng của thanh power
-        power_bar_height = 30  # chiều cao của thanh power
         power_ratio = self.power / 100
+        power_bar_x = (WINDOW_WIDTH - POWER_BAR_WIDTH) // 2
+        power_bar_y = WINDOW_HEIGHT - POWER_BAR_Y_OFFSET
 
-        # vị trí của thanh power
-        power_bar_x = (WINDOW_WIDTH - power_bar_width) // 2
-        power_bar_y = WINDOW_HEIGHT - 100
+        pygame.draw.rect(screen, POWER_BAR_BG_COLOR, (power_bar_x, power_bar_y, POWER_BAR_WIDTH, POWER_BAR_HEIGHT))
+        pygame.draw.rect(screen, POWER_BAR_COLOR,
+                         (power_bar_x, power_bar_y, POWER_BAR_WIDTH * power_ratio, POWER_BAR_HEIGHT))
 
-        # vẽ thanh nền màu xám
-        pygame.draw.rect(screen, (169, 169, 169), (power_bar_x, power_bar_y, power_bar_width, power_bar_height))
-        # vẽ thanh power màu vàng
-        pygame.draw.rect(screen, (255, 255, 0),
-                         (power_bar_x, power_bar_y, power_bar_width * power_ratio, power_bar_height))
-
-        # Vẽ các vạch số từ 0 đến 100
-        font = pygame.font.Font(None, 24)
-        for i in range(0, 101, 10):  # từ 0 đến 100, với bước là 10
-            x_position = power_bar_x + (i / 100) * power_bar_width
+        font = pygame.font.Font(None, POWER_BAR_FONT_SIZE)
+        for i in range(0, 101, 10):
+            x_position = power_bar_x + (i / 100) * POWER_BAR_WIDTH
             text_surface = font.render(str(i), True, BLACK)
-            text_rect = text_surface.get_rect(center=(x_position, power_bar_y + power_bar_height + 10))  # vị trí chỉ số
+            text_rect = text_surface.get_rect(center=(x_position, power_bar_y + POWER_BAR_HEIGHT + 10))
             screen.blit(text_surface, text_rect.topleft)
