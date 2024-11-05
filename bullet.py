@@ -1,7 +1,4 @@
-import pygame
-
-from main import screen
-
+from constants import *
 
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, x, y, image, shooter):
@@ -14,7 +11,7 @@ class Bullet(pygame.sprite.Sprite):
         self.shooter = shooter
         self.count = 0
 
-    def update(self,x,y):
+    def update(self, x, y):
         self.rect.x = x
         self.rect.y = y
 

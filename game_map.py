@@ -1,15 +1,15 @@
-import pygame
-
-from main import screen
-from settings import *
+from constants import *
 
 class GameMap(pygame.sprite.Sprite):
-    def __init__(self, x, y, image):
+    def __init__(self, x, y, image, background):
         super().__init__()
         self.image = pygame.transform.scale(image, (GAME_MAP_WIDTH, WINDOW_HEIGHT))
         self.rect = self.image.get_rect(topleft=(x, y))
         self.mask = pygame.mask.from_surface(self.image)
+        self.background = background
+
     def draw(self):
+        screen.blit(self.background, self.rect.topleft)
         screen.blit(self.image, self.rect.topleft)
 
     def move(self, speed):
