@@ -3,10 +3,10 @@ from sprite_animated import SpriteAnimated
 from constants import *
 
 class Character(pygame.sprite.Sprite):
-    def __init__(self, display_image, real_image, x, y):
+    def __init__(self, display_image, real_image, x, y, width, height):
         super().__init__()
-        self.display_image = pygame.transform.scale(display_image, (CHARACTER_WIDTH, CHARACTER_HEIGHT))
-        self.real_image = pygame.transform.scale(real_image, (CHARACTER_WIDTH, CHARACTER_HEIGHT))
+        self.display_image = pygame.transform.scale(display_image, (width, height))
+        self.real_image = pygame.transform.scale(real_image, (width, height))
         self.rect = self.real_image.get_rect(topleft=(x, y))
         self.mask = pygame.mask.from_surface(self.real_image)
         self.face_right = True
@@ -20,6 +20,8 @@ class Character(pygame.sprite.Sprite):
         self.HP = 100
         self.max_HP = 100
         self.screen = screen
+        self.width = width
+        self.height = height
         self.character_animation = SpriteAnimated(screen, "idle", 0.1)
 
     def angle(self, game_map):
@@ -43,16 +45,22 @@ class Character(pygame.sprite.Sprite):
         slope = (left_y_point - right_y_point) / (self.rect.left - self.rect.right)
         return -math.atan(slope) * 180 / (math.pi)
 
-    def draw(self, screen, angle, current_player, moving, shooting, character_angle_line_image, charging):
+    def draw(self, screen, camera, angle, current_player, moving, shooting, character_angle_line_image, charging, delay_time):
         self.display_image = self.character_animation.image
         flipped_image = pygame.transform.flip(self.display_image, not self.face_right, False)
         rotated_image = pygame.transform.rotate(flipped_image, angle)
         new_rect = rotated_image.get_rect(center=self.rect.center)
-        if not moving and current_player == self and not shooting and not self.jumping:
+
+        new_rect.topleft = camera.apply(self).topleft
+
+        if not moving and current_player == self and not shooting and not self.jumping and delay_time is None:
             rotated_angle = angle + self.shoot_angle if self.face_right else angle - self.shoot_angle
 
             rotated_angle_line_image = pygame.transform.rotate(character_angle_line_image, rotated_angle)
             angle_line_rect = rotated_angle_line_image.get_rect(center=self.rect.center)
+
+            angle_line_rect.center = camera.apply(self).center
+
             if (self.face_right and rotated_angle < 90) or (not self.face_right and rotated_angle < -90):
                 cover_rect = pygame.Rect(0, 0, rotated_angle_line_image.get_width() // 2,
                                          rotated_angle_line_image.get_height())
@@ -60,8 +68,10 @@ class Character(pygame.sprite.Sprite):
                 cover_rect = pygame.Rect(rotated_angle_line_image.get_width() // 2, 0,
                                          rotated_angle_line_image.get_width() // 2,
                                          rotated_angle_line_image.get_height())
+
             pygame.draw.rect(rotated_angle_line_image, (0, 0, 0, 0), cover_rect)
             screen.blit(rotated_angle_line_image, angle_line_rect.topleft)
+
         if not moving and current_player == self and not shooting and not self.jumping and not self.falling and not charging:
             self.character_animation.state = "idle"
         elif moving and current_player == self and not shooting and not self.jumping and not self.falling:
@@ -79,15 +89,15 @@ class Character(pygame.sprite.Sprite):
         elif charging and current_player == self:
             self.character_animation.state = "shooting"
             self.character_animation.setCenterPos(self.rect.center)
-        screen.blit(rotated_image, new_rect.topleft)
 
+        screen.blit(rotated_image, new_rect.topleft)
     def move(self, game_map):
         self.rect.x += self.speed
 
-        if self.rect.x < game_map.rect.left:
+        if self.rect.x < 1:
             self.rect.x = game_map.rect.left
-        if self.rect.left > game_map.rect.right:
-            self.rect.left = game_map.rect.right
+        if self.rect.left > game_map.rect.right - LIMIT_MOVING_RIGHT:
+            self.rect.left = game_map.rect.right - LIMIT_MOVING_RIGHT
 
     def update(self, game_map):
         self.character_animation.update()
@@ -133,11 +143,11 @@ class Character(pygame.sprite.Sprite):
         for i in range(1, int(abs(self.speed) + 1)):
             overlap_pos = self.mask.overlap(game_map.mask,
                                             (game_map.rect.x - self.rect.x - i * sign, game_map.rect.y - self.rect.y))
-            if overlap_pos == None or CHARACTER_HEIGHT - overlap_pos[1] <= HEIGHT_DIFF_ALLOWED:
+            if overlap_pos == None or self.height - overlap_pos[1] <= HEIGHT_DIFF_ALLOWED:
                 movable = True
                 speed = i * sign
                 if overlap_pos != None:
-                    self.rect.y -= (CHARACTER_HEIGHT - overlap_pos[1])
+                    self.rect.y -= (self.height - overlap_pos[1])
         return movable
 
     def shoot(self, bullet, game_map):
@@ -164,9 +174,11 @@ class Character(pygame.sprite.Sprite):
             return True
         return False
 
-    def draw_health_bar(self):
+    def draw_health_bar(self, camera):
         bar_x = self.rect.centerx - BAR_WIDTH // 2
         bar_y = self.rect.bottom + BAR_OFFSET_Y
+
+        bar_x, bar_y = camera.apply((bar_x, bar_y))
 
         current_health_width = int(BAR_WIDTH * (self.HP / self.max_HP))
 

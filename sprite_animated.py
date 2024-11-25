@@ -7,7 +7,7 @@ class SpriteAnimated(pygame.sprite.Sprite):
         self.state = state
         self.num_frames = 0
         self.current_frame = 0
-        self.shooting = [pygame.image.load('./image/clipart1580513.png')]
+        self.shooting = [pygame.image.load('image/character_display_image.png')]
         self.idle = [pygame.image.load('./image/sprite_worm_tile006.png')]
         self.move = [pygame.image.load('./image/sprite_worm_tile006.png'), pygame.image.load('./image/sprite_worm_tile007.png'),
                      pygame.image.load('./image/sprite_worm_tile008.png'), pygame.image.load('./image/sprite_worm_tile009.png'),

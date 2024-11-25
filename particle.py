@@ -7,7 +7,7 @@ class Particle(pygame.sprite.Sprite):
         self.direction = direction
         self.speed = speed
         self.time_life = time_life
-        self.image = pygame.image.load('./image/Fire0.png')
+        self.image = pygame.image.load('image/Fire.png')
         self.rect = self.image.get_rect()
         self.current_tick = 0
         self.start_time = pygame.time.get_ticks()
@@ -20,8 +20,8 @@ class Particle(pygame.sprite.Sprite):
         self.pos += self.direction * self.speed
         self.rect.center = self.pos
 
-    def draw(self, surface):
-        surface.blit(self.image, self.rect)
+    def draw(self, screen, camera):
+        screen.blit(self.image, camera.apply(self))
 
     def check_time_life(self):
         self.current_tick = pygame.time.get_ticks()

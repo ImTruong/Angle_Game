@@ -1,25 +1,34 @@
-from random import uniform
-from character import Character
-from game_map import GameMap
-from bullet import Bullet
-from particle import Particle
-from text import Text
+from random import *
+from character import *
+from game_map import *
+from bullet import *
+from particle import *
+from text import *
 from constants import *
+from camera import *
 
 particle_groups = pygame.sprite.Group()
 
 def main_game_loop():
-    character_display_image = pygame.image.load("./image/clipart1580513.png").convert_alpha()
-    character_real_image = pygame.image.load("./image/clipart1580513 (1).png").convert_alpha()
-    game_map_image = pygame.image.load("./image/Reloaded_Jurassic_small.png").convert_alpha()
-    character_angle_line_image = pygame.image.load("./image/Dotted-Line-PNG-Pic.png").convert_alpha()
-    character_angle_line_image = pygame.transform.scale(character_angle_line_image, (89, 10))
-    bullet_image = pygame.image.load("./image/CannonBullet1.png").convert_alpha()
-    background_image = pygame.transform.scale(pygame.image.load("./image/sea_background.png"), (WINDOW_WIDTH, WINDOW_HEIGHT))
-    player1 = Character(character_display_image, character_real_image, 400, 0)
-    player2 = Character(character_display_image, character_real_image, 600, 0)
 
-    game_map = GameMap(0, 0, game_map_image, background_image)
+    game_map = SeaMap(0, 0)
+    camera = Camera(game_map.game_map_width, game_map.game_map_height)
+
+    BULLET_SIZE = game_map.bullet_size
+    GAME_MAP_WIDTH = game_map.game_map_width
+    GAME_MAP_HEIGHT = game_map.game_map_height
+    CHARACTER_WIDTH = game_map.character_width
+    CHARACTER_HEIGHT = game_map.character_height
+
+    character_display_image = pygame.transform.scale(pygame.image.load("image/character_display_image.png").convert_alpha(), (CHARACTER_WIDTH, CHARACTER_HEIGHT))
+    character_real_image = pygame.transform.scale(pygame.image.load("image/character_block.png").convert_alpha(), (CHARACTER_WIDTH, CHARACTER_HEIGHT))
+    character_angle_line_image = pygame.image.load("image/Dotted_Line_Angle.png").convert_alpha()
+    character_angle_line_image = pygame.transform.scale(character_angle_line_image, (89, 10))
+    bullet_image = pygame.transform.scale(pygame.image.load("image/CannonBullet.png").convert_alpha(), (BULLET_SIZE, BULLET_SIZE))
+    player1 = Character(character_display_image, character_real_image, 1500, 0, CHARACTER_WIDTH, CHARACTER_HEIGHT)
+    player2 = Character(character_display_image, character_real_image, 400, 0, CHARACTER_WIDTH, CHARACTER_HEIGHT)
+
+
 
     characters = pygame.sprite.Group()
     characters.add(player1)
@@ -78,7 +87,11 @@ def main_game_loop():
             speed = uniform(0.25, 0.75)
             Particle(particle_groups, pos, direction, speed, 1)
 
+    delay_time = None
+
     while not game_over:
+
+
         seconds = (pygame.time.get_ticks() - start_ticks) / 1000
         time_left = time_limit - seconds
         time_left_text.text = time_left_text.font.render(f"Time Left: {int(time_left)}", True, BLACK)
@@ -103,7 +116,7 @@ def main_game_loop():
                     move_left = True
                 if event.key == pygame.K_RIGHT:
                     move_right = True
-                if event.key == pygame.K_LCTRL:
+                if event.key == pygame.K_LCTRL and current_player.on_ground and shooting == False:
                     charging = True
 
             if event.type == pygame.KEYUP:
@@ -115,27 +128,26 @@ def main_game_loop():
                     move_left = False
                 if event.key == pygame.K_RIGHT:
                     move_right = False
-                if event.key == pygame.K_LCTRL:
+                if event.key == pygame.K_LCTRL and current_player.on_ground:
                     if not shooting:
                         charging = False
                         shooting = True
-                        bullet = Bullet(current_player.rect.centerx, current_player.rect.centery, bullet_image, current_player)
+                        bullet = Bullet(bullet_image, current_player)
 
-        screen.fill(WHITE)
-        game_map.draw()
+        if not shooting and delay_time is None:
+            camera.update(current_player)
 
-        if charging:
-            move_down = move_up = move_left = move_right = current_player.jumping = False
-
+        game_map.draw(camera)
         if time_left <= 0 and not shooting and not charging:
-            charging = move_down = move_up = move_left = move_right = current_player.jumping = False
             start_ticks = pygame.time.get_ticks()
-            time_left = time_limit
             switch_turn()
+        elif charging or delay_time is not None:
+            move_down = move_up = move_left = move_right = current_player.jumping = False
         elif shooting:
             charging = move_down = move_up = move_left = move_right = current_player.jumping = False
             current_player.shoot(bullet, game_map)
-            bullet.draw()
+            camera.update(bullet)
+            bullet.draw(camera)
             bullet.time += BULLET_SPEED
             if bullet.rect.right < 0 or bullet.rect.left > GAME_MAP_WIDTH or bullet.rect.top > WINDOW_HEIGHT or bullet.mask.overlap(game_map.mask, (game_map.rect.x - bullet.rect.x, game_map.rect.y - bullet.rect.y)):
                 if pygame.sprite.collide_mask(bullet, game_map):
@@ -149,22 +161,31 @@ def main_game_loop():
                                 winner = "Player 1" if character == player2 else "Player 2"
                                 game_over = True
                     bullet.kill()
+                delay_time = pygame.time.get_ticks()
                 start_ticks = pygame.time.get_ticks()
-                time_left = time_limit
                 bullet.kill()
                 shooting = False
                 current_player.power = 0
                 switch_turn()
 
+        if delay_time is not None:
+            if pygame.time.get_ticks() - delay_time >= 2000:
+                delay_time = None
+
         particle_groups.update()
-        particle_groups.draw(screen)
+        for particle in particle_groups:
+            particle.draw(screen, camera)
         characters.update(game_map)
         handle_movement(current_player)
 
         for character in characters:
+            if character.rect.top > GAME_MAP_HEIGHT:
+                character.HP = 0
+                winner = "Player 1" if character == player2 else "Player 2"
+                game_over = True
             character_angle = character.angle(game_map)
-            character.draw(screen, character_angle, current_player, (move_left or move_right), shooting, character_angle_line_image, charging)
-            character.draw_health_bar()
+            character.draw(screen, camera, character_angle, current_player, (move_left or move_right), shooting, character_angle_line_image, charging, delay_time)
+            character.draw_health_bar(camera)
             if character == current_player:
                 character.draw_power_bar()
 
