@@ -16,6 +16,7 @@ class Character(pygame.sprite.Sprite):
         self.jumping = False
         self.velocity = BASE_VELOCITY
         self.power = 0
+        self.teleport = True
         self.shooting = False
         self.HP = 100
         self.max_HP = 100
@@ -161,7 +162,6 @@ class Character(pygame.sprite.Sprite):
         scale = POWER_SCALE
         V = scale * self.power
         x0, y0 = self.rect.topleft if not self.face_right else self.rect.topright
-        x0, y0 = self.rect.center
         x = x0 + direction * V * math.cos(theta) * t
         y = y0 + (-V * math.sin(theta) * t + accel * t ** 2 / 2)
         bullet.update(x, y)

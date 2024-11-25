@@ -1,8 +1,9 @@
 import pygame
 
 pygame.init()
+pygame.display.set_mode((1, 1))  # Set a minimal display mode
 
-image = pygame.image.load('input.png').convert_alpha()
+image = pygame.image.load('./image/constructor.png').convert_alpha()
 
 width, height = image.get_size()
 for x in range(width):

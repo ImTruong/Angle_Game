@@ -1,4 +1,7 @@
 from random import *
+
+import pygame.mouse
+
 from character import *
 from game_map import *
 from bullet import *
@@ -9,9 +12,8 @@ from camera import *
 
 particle_groups = pygame.sprite.Group()
 
-def main_game_loop():
+def main_game_loop(game_map):
 
-    game_map = SeaMap(0, 0)
     camera = Camera(game_map.game_map_width, game_map.game_map_height)
 
     BULLET_SIZE = game_map.bullet_size
@@ -24,9 +26,8 @@ def main_game_loop():
     character_real_image = pygame.transform.scale(pygame.image.load("image/character_block.png").convert_alpha(), (CHARACTER_WIDTH, CHARACTER_HEIGHT))
     character_angle_line_image = pygame.image.load("image/Dotted_Line_Angle.png").convert_alpha()
     character_angle_line_image = pygame.transform.scale(character_angle_line_image, (89, 10))
-    bullet_image = pygame.transform.scale(pygame.image.load("image/CannonBullet.png").convert_alpha(), (BULLET_SIZE, BULLET_SIZE))
-    player1 = Character(character_display_image, character_real_image, 1500, 0, CHARACTER_WIDTH, CHARACTER_HEIGHT)
-    player2 = Character(character_display_image, character_real_image, 400, 0, CHARACTER_WIDTH, CHARACTER_HEIGHT)
+    player1 = Character(character_display_image, character_real_image, 800, 70, CHARACTER_WIDTH, CHARACTER_HEIGHT)
+    player2 = Character(character_display_image, character_real_image, 400, 70, CHARACTER_WIDTH, CHARACTER_HEIGHT)
 
 
 
@@ -43,9 +44,13 @@ def main_game_loop():
     angle_adjust = 1
     shooting = False
     charging = False
+    delay_time = None
+    mouse_view_active = False
+    mouse_view_pos = (0, 0)
     charging_status = "increasing"
     game_over = False
     time_limit = 20
+    teleport = False
     start_ticks = pygame.time.get_ticks()
     time_left_text = Text(f"Time Left: {time_limit}", 100, 50, size=30, color=BLACK)
 
@@ -87,7 +92,18 @@ def main_game_loop():
             speed = uniform(0.25, 0.75)
             Particle(particle_groups, pos, direction, speed, 1)
 
-    delay_time = None
+    def update_mouse_camera():
+        nonlocal mouse_view_pos
+        mouse_pos = pygame.mouse.get_pos()
+        if mouse_pos[0] <= RANGE_MOUSE_VIEW and mouse_view_pos[0] >= MOUSE_VIEW_SPEED:
+            mouse_view_pos = (mouse_view_pos[0] - MOUSE_VIEW_SPEED, mouse_view_pos[1])
+        if mouse_pos[0] >= WINDOW_WIDTH - RANGE_MOUSE_VIEW and mouse_view_pos[0] <= GAME_MAP_WIDTH - MOUSE_VIEW_SPEED:
+            mouse_view_pos = (mouse_view_pos[0] + MOUSE_VIEW_SPEED, mouse_view_pos[1])
+        if mouse_pos[1] <= RANGE_MOUSE_VIEW and mouse_view_pos[1] >= MOUSE_VIEW_SPEED:
+            mouse_view_pos = (mouse_view_pos[0], mouse_view_pos[1] - MOUSE_VIEW_SPEED)
+        if mouse_pos[1] >= WINDOW_HEIGHT - RANGE_MOUSE_VIEW and mouse_view_pos[1] <= GAME_MAP_HEIGHT - MOUSE_VIEW_SPEED:
+            mouse_view_pos = (mouse_view_pos[0], mouse_view_pos[1] + MOUSE_VIEW_SPEED)
+        camera.update(mouse_view_pos)
 
     while not game_over:
 
@@ -118,6 +134,11 @@ def main_game_loop():
                     move_right = True
                 if event.key == pygame.K_LCTRL and current_player.on_ground and shooting == False:
                     charging = True
+                if event.key == pygame.K_LALT:
+                    mouse_view_active = True if not mouse_view_active else False
+                if event.key == pygame.K_1 and current_player.teleport:
+                    teleport = True
+                    current_player.teleport = False
 
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_UP:
@@ -132,10 +153,16 @@ def main_game_loop():
                     if not shooting:
                         charging = False
                         shooting = True
-                        bullet = Bullet(bullet_image, current_player)
+                        if teleport:
+                            bullet = TeleportBullet(current_player)
+                            teleport = False
+                        else:
+                            bullet = NormalBullet(current_player)
 
-        if not shooting and delay_time is None:
+        if not shooting and delay_time is None and not mouse_view_active:
             camera.update(current_player)
+        elif mouse_view_active:
+            update_mouse_camera()
 
         game_map.draw(camera)
         if time_left <= 0 and not shooting and not charging:
@@ -146,21 +173,28 @@ def main_game_loop():
         elif shooting:
             charging = move_down = move_up = move_left = move_right = current_player.jumping = False
             current_player.shoot(bullet, game_map)
-            camera.update(bullet)
+            if not mouse_view_active:
+                camera.update(bullet)
             bullet.draw(camera)
             bullet.time += BULLET_SPEED
-            if bullet.rect.right < 0 or bullet.rect.left > GAME_MAP_WIDTH or bullet.rect.top > WINDOW_HEIGHT or bullet.mask.overlap(game_map.mask, (game_map.rect.x - bullet.rect.x, game_map.rect.y - bullet.rect.y)):
+            if bullet.rect.right < 0 or bullet.rect.left > GAME_MAP_WIDTH or bullet.rect.top > GAME_MAP_HEIGHT or bullet.mask.overlap(game_map.mask, (game_map.rect.x - bullet.rect.x, game_map.rect.y - bullet.rect.y)):
                 if pygame.sprite.collide_mask(bullet, game_map):
-                    spawm_particle(bullet.rect.center)
-                    game_map.update_from_explosion(bullet.rect.center)
-                    for character in characters:
-                        if character.check_collision_with_explode_point(bullet,bullet.rect.center):
-                            bullet.hit_target = True
-                            character.HP -= BULLET_DAMAGE
-                            if character.HP <= 0:
-                                winner = "Player 1" if character == player2 else "Player 2"
-                                game_over = True
-                    bullet.kill()
+                    if isinstance(bullet, NormalBullet):
+                        spawm_particle(bullet.rect.center)
+                        game_map.update_from_explosion(bullet.rect.center)
+                        for character in characters:
+                            if character.check_collision_with_explode_point(bullet,bullet.rect.center):
+                                bullet.hit_target = True
+                                character.HP -= BULLET_DAMAGE
+                                if character.HP <= 0:
+                                    winner = "Player 1" if character == player2 else "Player 2"
+                                    game_over = True
+                        bullet.kill()
+                    elif isinstance(bullet, TeleportBullet):
+                        current_player.rect.center = bullet.rect.center
+                        if current_player.mask.overlap(game_map.mask, (game_map.rect.x - current_player.rect.x, game_map.rect.y - current_player.rect.y)):
+                            current_player.rect.center = (current_player.rect.center[0], current_player.rect.center[1] - 50)
+                        bullet.kill()
                 delay_time = pygame.time.get_ticks()
                 start_ticks = pygame.time.get_ticks()
                 bullet.kill()

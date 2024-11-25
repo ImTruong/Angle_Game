@@ -13,8 +13,13 @@ class Camera:
             return (entity[0] + self.camera.x, entity[1] + self.camera.y)
 
     def update(self, target):
-        x = -target.rect.centerx + int(WINDOW_WIDTH / 2)
-        y = -target.rect.centery + int(WINDOW_HEIGHT / 2)
+        if isinstance(target, tuple):
+            mouse_x, mouse_y = target
+            x = -mouse_x + WINDOW_WIDTH // 2
+            y = -mouse_y + WINDOW_HEIGHT // 2
+        else:
+            x = -target.rect.centerx + WINDOW_WIDTH // 2
+            y = -target.rect.centery + WINDOW_HEIGHT // 2
 
         x = min(0, x)
         y = min(0, y)

@@ -48,17 +48,93 @@ class SeaMap(GameMap):
         )
 
 
-class SonicMap(GameMap):
+class MoonMap(GameMap):
     def __init__(self, x, y):
-        self.game_map_width = 8000
-        self.game_map_height = 3000
+        self.game_map_width = 1500
+        self.game_map_height = 800
         self.character_width = 40
         self.character_height = 40
         self.bullet_size = 20
 
         super().__init__(
             x, y,
-            pygame.image.load("image/sonic_map.png").convert_alpha(),
+            pygame.image.load("image/moon_map.png").convert_alpha(),
+            pygame.image.load("./image/moon_map_background.jpg"),
+            self.game_map_width,
+            self.game_map_height,
+            self.character_width,
+            self.character_height,
+            self.bullet_size
+        )
+
+class JungleMap(GameMap):
+    def __init__(self, x, y):
+        self.game_map_width = 1300
+        self.game_map_height = 900
+        self.character_width = 40
+        self.character_height = 40
+        self.bullet_size = 20
+
+        super().__init__(
+            x, y,
+            pygame.image.load("image/jungle_map.png").convert_alpha(),
+            pygame.image.load("./image/sea_background.png"),
+            self.game_map_width,
+            self.game_map_height,
+            self.character_width,
+            self.character_height,
+            self.bullet_size
+        )
+
+class AngryBirdMap(GameMap):
+    def __init__(self, x, y):
+        self.game_map_width = 1300
+        self.game_map_height = 800
+        self.character_width = 40
+        self.character_height = 40
+        self.bullet_size = 20
+
+        super().__init__(
+            x, y,
+            pygame.image.load("image/angry_bird_map.png").convert_alpha(),
+            pygame.image.load("./image/sea_background.png"),
+            self.game_map_width,
+            self.game_map_height,
+            self.character_width,
+            self.character_height,
+            self.bullet_size
+        )
+
+class CaveMap(GameMap):
+    def __init__(self, x, y):
+        self.game_map_width = 1800
+        self.game_map_height = 1200
+        self.character_width = 40
+        self.character_height = 40
+        self.bullet_size = 20
+
+        super().__init__(
+            x, y,
+            pygame.image.load("image/cave_map.png").convert_alpha(),
+            pygame.image.load("./image/cave_map_background.jpg"),
+            self.game_map_width,
+            self.game_map_height,
+            self.character_width,
+            self.character_height,
+            self.bullet_size
+        )
+
+class ConstructorMap(GameMap):
+    def __init__(self, x, y):
+        self.game_map_width = 1500
+        self.game_map_height = 1000
+        self.character_width = 30
+        self.character_height = 30
+        self.bullet_size = 20
+
+        super().__init__(
+            x, y,
+            pygame.image.load("image/contructor_map.png").convert_alpha(),
             pygame.image.load("./image/sea_background.png"),
             self.game_map_width,
             self.game_map_height,
