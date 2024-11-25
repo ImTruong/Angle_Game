@@ -1,3 +1,5 @@
+import pygame.mixer_music
+
 from constants import *
 from text import Text
 from button import Button
@@ -9,7 +11,7 @@ def start_menu():
 
     start_button = Button("Start", WINDOW_WIDTH / 2 - 100, WINDOW_HEIGHT / 2 + 40, 200, 50)
     quit_button = Button("Quit", WINDOW_WIDTH / 2 - 100, WINDOW_HEIGHT / 2 + 110, 200, 50)
-
+    pygame.mixer_music.play(-1)
     while True:
         screen.fill(WHITE)
         start_text.draw()
@@ -21,11 +23,14 @@ def start_menu():
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                pygame.mixer_music.stop()
                 pygame.quit()
                 quit()
 
             if start_button.is_clicked(event):
+                pygame.mixer_music.stop()
                 return
             if quit_button.is_clicked(event):
+                pygame.mixer_music.stop()
                 pygame.quit()
                 quit()

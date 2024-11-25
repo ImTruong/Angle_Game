@@ -21,6 +21,7 @@ class Character(pygame.sprite.Sprite):
         self.max_HP = 100
         self.screen = screen
         self.character_animation = SpriteAnimated(screen, "idle", 0.1)
+        self.turn = False
 
     def angle(self, game_map):
         if not self.on_ground:
@@ -118,13 +119,13 @@ class Character(pygame.sprite.Sprite):
 
     def jump(self, game_map):
         if self.jumping:
-            if self.velocity >= JUMP_HEIGHT or self.mask.overlap(game_map.mask, (
-            game_map.rect.x - self.rect.x, game_map.rect.y - self.rect.y + self.velocity)):
-                self.jumping = False
-                self.velocity = JUMP_HEIGHT
+            if self.velocity >= -JUMP_HEIGHT and not self.mask.overlap(
+                    game_map.mask, (game_map.rect.x - self.rect.x, game_map.rect.y - self.rect.y + self.velocity)):
+                self.rect.y -= self.velocity + 2
+                self.velocity -= GRAVITY
             else:
-                self.rect.y -= self.velocity
-                self.velocity += GRAVITY
+                self.jumping = False
+                self.velocity = JUMP_HEIGHT  # Reset vận tốc cho lần nhảy sau
 
     def check_collision_with_game_map_y(self, game_map):
         movable = False
@@ -188,3 +189,21 @@ class Character(pygame.sprite.Sprite):
             text_surface = font.render(str(i), True, BLACK)
             text_rect = text_surface.get_rect(center=(x_position, power_bar_y + POWER_BAR_HEIGHT + 10))
             screen.blit(text_surface, text_rect.topleft)
+
+    def draw_turn_marker(self, player_name, is_turn):
+        if is_turn:
+            # Tọa độ của tam giác
+            pointer_x = self.rect.centerx
+            pointer_y = self.rect.top - 30
+            triangle_points = [
+                (pointer_x, pointer_y + 20),  # Đỉnh tam giác (hướng xuống)
+                (pointer_x - 10, pointer_y),  # Góc trái
+                (pointer_x + 10, pointer_y)  # Góc phải
+            ]
+            pygame.draw.polygon(self.screen, (255, 0, 0), triangle_points)
+
+
+            font = pygame.font.Font(None, 24)  # Font chữ
+            text_surface = font.render(player_name, True, (0, 0, 0))  # Màu đen
+            text_rect = text_surface.get_rect(center=(pointer_x, pointer_y - 10))
+            self.screen.blit(text_surface, text_rect)

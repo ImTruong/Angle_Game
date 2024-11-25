@@ -5,6 +5,8 @@ from game_loop import main_game_loop
 
 pygame.init()
 pygame.display.set_caption("Gunny")
+pygame.mixer.init()
+
 
 start_menu()
 main_game_loop()

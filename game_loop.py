@@ -1,4 +1,8 @@
 from random import uniform
+
+import pygame.mixer
+
+from Sound import *
 from character import Character
 from game_map import GameMap
 from bullet import Bullet
@@ -82,7 +86,6 @@ def main_game_loop():
         seconds = (pygame.time.get_ticks() - start_ticks) / 1000
         time_left = time_limit - seconds
         time_left_text.text = time_left_text.font.render(f"Time Left: {int(time_left)}", True, BLACK)
-
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -90,6 +93,8 @@ def main_game_loop():
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
+                    jump_sfx.play()
+                    move_sfx.stop()
                     if not current_player.jumping and current_player.on_ground:
                         current_player.jumping = True
                         current_player.on_ground = False
@@ -100,13 +105,16 @@ def main_game_loop():
                     angle_adjust = -1
                     move_down = True
                 if event.key == pygame.K_LEFT:
+                    move_sfx.play(-1)
                     move_left = True
                 if event.key == pygame.K_RIGHT:
+                    move_sfx.play(-1)
                     move_right = True
                 if event.key == pygame.K_LCTRL:
                     charging = True
 
             if event.type == pygame.KEYUP:
+                move_sfx.stop()
                 if event.key == pygame.K_UP:
                     move_up = False
                 if event.key == pygame.K_DOWN:
@@ -116,11 +124,11 @@ def main_game_loop():
                 if event.key == pygame.K_RIGHT:
                     move_right = False
                 if event.key == pygame.K_LCTRL:
+                    shoot_sfx.play()
                     if not shooting:
                         charging = False
                         shooting = True
                         bullet = Bullet(current_player.rect.centerx, current_player.rect.centery, bullet_image, current_player)
-
         screen.fill(WHITE)
         game_map.draw()
 
@@ -140,6 +148,7 @@ def main_game_loop():
             if bullet.rect.right < 0 or bullet.rect.left > GAME_MAP_WIDTH or bullet.rect.top > WINDOW_HEIGHT or bullet.mask.overlap(game_map.mask, (game_map.rect.x - bullet.rect.x, game_map.rect.y - bullet.rect.y)):
                 if pygame.sprite.collide_mask(bullet, game_map):
                     spawm_particle(bullet.rect.center)
+                    explosion_sfx.play()
                     game_map.update_from_explosion(bullet.rect.center)
                     for character in characters:
                         if character.check_collision_with_explode_point(bullet,bullet.rect.center):
@@ -163,10 +172,12 @@ def main_game_loop():
 
         for character in characters:
             character_angle = character.angle(game_map)
-            character.draw(screen, character_angle, current_player, (move_left or move_right), shooting, character_angle_line_image, charging)
+            character.draw(screen, character_angle, current_player, (move_left or move_right), shooting,
+                           character_angle_line_image, charging)
             character.draw_health_bar()
             if character == current_player:
                 character.draw_power_bar()
+                character.draw_turn_marker("P1" if character == player1 else "P2", character == current_player)
 
         if (not shooting and not charging):
             time_left_text.draw()
