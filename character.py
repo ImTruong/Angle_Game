@@ -48,14 +48,13 @@ class Character(pygame.sprite.Sprite):
         flipped_image = pygame.transform.flip(self.display_image, not self.face_right, False)
         rotated_image = pygame.transform.rotate(flipped_image, angle)
         new_rect = rotated_image.get_rect(center=self.rect.center)
-        if not moving and current_player == self and not shooting and not self.jumping and not self.falling and not charging:
-            self.character_animation.state = "idle"
+        if not moving and current_player == self and not shooting and not self.jumping:
             rotated_angle = angle + self.shoot_angle if self.face_right else angle - self.shoot_angle
 
             rotated_angle_line_image = pygame.transform.rotate(character_angle_line_image, rotated_angle)
             angle_line_rect = rotated_angle_line_image.get_rect(center=self.rect.center)
             if (self.face_right and rotated_angle < 90) or (not self.face_right and rotated_angle < -90):
-                cover_rect = pygame.Rect(0 ,0, rotated_angle_line_image.get_width() // 2,
+                cover_rect = pygame.Rect(0, 0, rotated_angle_line_image.get_width() // 2,
                                          rotated_angle_line_image.get_height())
             else:
                 cover_rect = pygame.Rect(rotated_angle_line_image.get_width() // 2, 0,
@@ -63,6 +62,8 @@ class Character(pygame.sprite.Sprite):
                                          rotated_angle_line_image.get_height())
             pygame.draw.rect(rotated_angle_line_image, (0, 0, 0, 0), cover_rect)
             screen.blit(rotated_angle_line_image, angle_line_rect.topleft)
+        if not moving and current_player == self and not shooting and not self.jumping and not self.falling and not charging:
+            self.character_animation.state = "idle"
         elif moving and current_player == self and not shooting and not self.jumping and not self.falling:
             self.character_animation.state = "move"
             self.character_animation.setCenterPos(self.rect.center)
