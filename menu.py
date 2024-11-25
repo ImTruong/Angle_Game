@@ -5,6 +5,7 @@ from button import Button
 
 def start_menu():
     pygame.init()
+    pygame.mixer_music.play(-1)
     screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
     background_image = pygame.image.load("image/menu_background.jpg")
     background_image = pygame.transform.scale(background_image, (WINDOW_WIDTH, WINDOW_HEIGHT))
@@ -27,6 +28,7 @@ def start_menu():
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                pygame.mixer_music.stop()
                 pygame.quit()
                 quit()
 
@@ -35,6 +37,7 @@ def start_menu():
             if instruction_button.is_clicked(event):
                 return "instructions"
             if quit_button.is_clicked(event):
+                pygame.mixer_music.stop()
                 pygame.quit()
                 quit()
 
@@ -93,16 +96,21 @@ def map_selection_menu():
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                pygame.mixer_music.stop()
                 pygame.quit()
                 quit()
 
             if sea_map_button.is_clicked(event):
+                pygame.mixer_music.stop()
                 return "SeaMap"
             if moon_map_button.is_clicked(event):
+                pygame.mixer_music.stop()
                 return "MoonMap"
             if constructor_map_button.is_clicked(event):
+                pygame.mixer_music.stop()
                 return "ConstructorMap"
             if back_button.is_clicked(event):
+                pygame.mixer_music.stop()
                 return "back"
 
 

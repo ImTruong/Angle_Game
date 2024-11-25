@@ -1,13 +1,13 @@
-from random import *
-
 import pygame.mouse
+from debugpy.common.timestamp import current
 
-from character import *
-from game_map import *
 from bullet import *
-from particle import *
-from text import *
-from constants import *
+from random import uniform
+import pygame.mixer
+from Sound import *
+from character import Character
+from particle import Particle
+from text import Text
 from camera import *
 
 particle_groups = pygame.sprite.Group()
@@ -28,7 +28,6 @@ def main_game_loop(game_map):
     character_angle_line_image = pygame.transform.scale(character_angle_line_image, (89, 10))
     player1 = Character(character_display_image, character_real_image, 800, 70, CHARACTER_WIDTH, CHARACTER_HEIGHT)
     player2 = Character(character_display_image, character_real_image, 400, 70, CHARACTER_WIDTH, CHARACTER_HEIGHT)
-
 
 
     characters = pygame.sprite.Group()
@@ -119,6 +118,8 @@ def main_game_loop(game_map):
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
+                    jump_sfx.play()
+                    move_sfx.stop()
                     if not current_player.jumping and current_player.on_ground:
                         current_player.jumping = True
                         current_player.on_ground = False
@@ -129,8 +130,10 @@ def main_game_loop(game_map):
                     angle_adjust = -1
                     move_down = True
                 if event.key == pygame.K_LEFT:
+                    move_sfx.play(-1)
                     move_left = True
                 if event.key == pygame.K_RIGHT:
+                    move_sfx.play(-1)
                     move_right = True
                 if event.key == pygame.K_LCTRL and current_player.on_ground and shooting == False:
                     charging = True
@@ -141,6 +144,7 @@ def main_game_loop(game_map):
                     current_player.teleport = False
 
             if event.type == pygame.KEYUP:
+                move_sfx.stop()
                 if event.key == pygame.K_UP:
                     move_up = False
                 if event.key == pygame.K_DOWN:
@@ -150,6 +154,7 @@ def main_game_loop(game_map):
                 if event.key == pygame.K_RIGHT:
                     move_right = False
                 if event.key == pygame.K_LCTRL and current_player.on_ground:
+                    shoot_sfx.play()
                     if not shooting:
                         charging = False
                         shooting = True
@@ -179,6 +184,7 @@ def main_game_loop(game_map):
             bullet.time += BULLET_SPEED
             if bullet.rect.right < 0 or bullet.rect.left > GAME_MAP_WIDTH or bullet.rect.top > GAME_MAP_HEIGHT or bullet.mask.overlap(game_map.mask, (game_map.rect.x - bullet.rect.x, game_map.rect.y - bullet.rect.y)):
                 if pygame.sprite.collide_mask(bullet, game_map):
+                    explosion_sfx.play()
                     if isinstance(bullet, NormalBullet):
                         spawm_particle(bullet.rect.center)
                         game_map.update_from_explosion(bullet.rect.center)
@@ -220,6 +226,7 @@ def main_game_loop(game_map):
             character_angle = character.angle(game_map)
             character.draw(screen, camera, character_angle, current_player, (move_left or move_right), shooting, character_angle_line_image, charging, delay_time)
             character.draw_health_bar(camera)
+            character.draw_turn_marker("P1" if character == player1 else "P2",character == current_player, camera)
             if character == current_player:
                 character.draw_power_bar()
 
