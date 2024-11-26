@@ -17,6 +17,8 @@ class Character(pygame.sprite.Sprite):
         self.velocity = BASE_VELOCITY
         self.power = 0
         self.teleport = True
+        self.freeze = 0
+        self.frozen_bullet = True
         self.shooting = False
         self.HP = 100
         self.max_HP = 100
@@ -46,7 +48,7 @@ class Character(pygame.sprite.Sprite):
         slope = (left_y_point - right_y_point) / (self.rect.left - self.rect.right)
         return -math.atan(slope) * 180 / (math.pi)
 
-    def draw(self, screen, camera, angle, current_player, moving, shooting, character_angle_line_image, charging, delay_time):
+    def draw(self, screen, camera, angle, current_player, moving, shooting, character_angle_line_image, charging, delay_time, freeze_image):
         self.display_image = self.character_animation.image
         flipped_image = pygame.transform.flip(self.display_image, not self.face_right, False)
         rotated_image = pygame.transform.rotate(flipped_image, angle)
@@ -92,6 +94,11 @@ class Character(pygame.sprite.Sprite):
             self.character_animation.setCenterPos(self.rect.center)
 
         screen.blit(rotated_image, new_rect.topleft)
+        if self.freeze > 0:
+            flipped_freeze_image = pygame.transform.flip(freeze_image, not self.face_right, False)
+            rotated_freeze_image = pygame.transform.rotate(flipped_freeze_image, angle)
+            freeze_rect = rotated_freeze_image.get_rect(center=new_rect.center)
+            screen.blit(rotated_freeze_image, freeze_rect.topleft)
     def move(self, game_map):
         self.rect.x += self.speed
 

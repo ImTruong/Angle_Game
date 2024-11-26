@@ -1,5 +1,4 @@
 import pygame.mouse
-from debugpy.common.timestamp import current
 
 from bullet import *
 from random import uniform
@@ -26,6 +25,7 @@ def main_game_loop(game_map):
     character_real_image = pygame.transform.scale(pygame.image.load("image/character_block.png").convert_alpha(), (CHARACTER_WIDTH, CHARACTER_HEIGHT))
     character_angle_line_image = pygame.image.load("image/Dotted_Line_Angle.png").convert_alpha()
     character_angle_line_image = pygame.transform.scale(character_angle_line_image, (89, 10))
+    freeze_image = pygame.transform.scale(pygame.image.load("image/freeze.png").convert_alpha(), (CHARACTER_WIDTH*2, CHARACTER_HEIGHT*2))
     player1 = Character(character_display_image, character_real_image, 800, 70, CHARACTER_WIDTH, CHARACTER_HEIGHT)
     player2 = Character(character_display_image, character_real_image, 400, 70, CHARACTER_WIDTH, CHARACTER_HEIGHT)
 
@@ -50,6 +50,7 @@ def main_game_loop(game_map):
     game_over = False
     time_limit = 20
     teleport = False
+    frozen_bullet = False
     start_ticks = pygame.time.get_ticks()
     time_left_text = Text(f"Time Left: {time_limit}", 100, 50, size=30, color=BLACK)
 
@@ -57,6 +58,9 @@ def main_game_loop(game_map):
         nonlocal current_player
         current_player = player1 if current_player == player2 else player2
         current_player.speed = DEFAULT_CHARACTER_SPEED
+        if current_player.freeze > 0:
+            current_player.freeze -= 1
+            switch_turn()
 
     def handle_movement(current_character):
         nonlocal move_left, move_right, move_up, move_down, angle_adjust, shooting, charging, charging_status
@@ -140,8 +144,9 @@ def main_game_loop(game_map):
                 if event.key == pygame.K_LALT:
                     mouse_view_active = True if not mouse_view_active else False
                 if event.key == pygame.K_1 and current_player.teleport:
-                    teleport = True
-                    current_player.teleport = False
+                    teleport = True if not teleport else False
+                if event.key == pygame.K_2 and current_player.frozen_bullet:
+                    frozen_bullet = True if not frozen_bullet else False
 
             if event.type == pygame.KEYUP:
                 move_sfx.stop()
@@ -161,6 +166,9 @@ def main_game_loop(game_map):
                         if teleport:
                             bullet = TeleportBullet(current_player)
                             teleport = False
+                        elif frozen_bullet:
+                            bullet = IceBullet(current_player)
+                            frozen_bullet = False
                         else:
                             bullet = NormalBullet(current_player)
 
@@ -189,18 +197,41 @@ def main_game_loop(game_map):
                         spawm_particle(bullet.rect.center)
                         game_map.update_from_explosion(bullet.rect.center)
                         for character in characters:
-                            if character.check_collision_with_explode_point(bullet,bullet.rect.center):
+                            if character.check_collision_with_explode_point(bullet, bullet.rect.center):
                                 bullet.hit_target = True
                                 character.HP -= BULLET_DAMAGE
                                 if character.HP <= 0:
                                     winner = "Player 1" if character == player2 else "Player 2"
                                     game_over = True
-                        bullet.kill()
                     elif isinstance(bullet, TeleportBullet):
+                        current_player.teleport = False
                         current_player.rect.center = bullet.rect.center
-                        if current_player.mask.overlap(game_map.mask, (game_map.rect.x - current_player.rect.x, game_map.rect.y - current_player.rect.y)):
-                            current_player.rect.center = (current_player.rect.center[0], current_player.rect.center[1] - 50)
-                        bullet.kill()
+                        if current_player.mask.overlap(game_map.mask, (
+                        game_map.rect.x - current_player.rect.x, game_map.rect.y - current_player.rect.y)):
+                            found_safe_position = False
+                            for distance in range(1, 30):
+                                for dx in range(-distance, distance + 1):
+                                    for dy in range(-distance, distance + 1):
+                                        if not current_player.mask.overlap(game_map.mask,
+                                                                           (
+                                                                           game_map.rect.x - current_player.rect.x - dx,
+                                                                           game_map.rect.y - current_player.rect.y - dy)):
+                                            current_player.rect.x += dx
+                                            current_player.rect.y += dy
+                                            found_safe_position = True
+                                            break
+
+                                    if found_safe_position:
+                                        break
+
+                                if found_safe_position:
+                                    break
+                    elif isinstance(bullet, IceBullet):
+                        current_player.frozen_bullet = False
+                        for character in characters:
+                            if character.check_collision_with_explode_point(bullet, bullet.rect.center):
+                                character.freeze = 2
+                    bullet.kill()
                 delay_time = pygame.time.get_ticks()
                 start_ticks = pygame.time.get_ticks()
                 bullet.kill()
@@ -224,7 +255,7 @@ def main_game_loop(game_map):
                 winner = "Player 1" if character == player2 else "Player 2"
                 game_over = True
             character_angle = character.angle(game_map)
-            character.draw(screen, camera, character_angle, current_player, (move_left or move_right), shooting, character_angle_line_image, charging, delay_time)
+            character.draw(screen, camera, character_angle, current_player, (move_left or move_right), shooting, character_angle_line_image, charging, delay_time, freeze_image)
             character.draw_health_bar(camera)
             character.draw_turn_marker("P1" if character == player1 else "P2",character == current_player, camera)
             if character == current_player:

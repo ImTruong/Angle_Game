@@ -29,3 +29,4 @@ class IceBullet(Bullet):
 class TeleportBullet(Bullet):
     def __init__(self, shooter):
         super().__init__(pygame.image.load("./image/plane_bullet.png").convert_alpha(), shooter, 20)
+
