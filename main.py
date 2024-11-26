@@ -17,6 +17,8 @@ while True:
             game_map = MoonMap(0, 0)
         elif selected_map == "ConstructorMap":
             game_map = ConstructorMap(0, 0)
+        else :
+            continue
         main_game_loop(game_map)
     elif selected_option == "instructions":
         instruction_page()

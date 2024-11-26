@@ -110,7 +110,6 @@ def map_selection_menu():
                 pygame.mixer_music.stop()
                 return "ConstructorMap"
             if back_button.is_clicked(event):
-                pygame.mixer_music.stop()
                 return "back"
 
 

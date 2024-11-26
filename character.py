@@ -210,9 +210,9 @@ class Character(pygame.sprite.Sprite):
             pointer_x, pointer_y = camera.apply((pointer_x, pointer_y))
 
             triangle_points = [
-                (pointer_x, pointer_y + 20),  # Đỉnh tam giác (hướng xuống)
-                (pointer_x - 10, pointer_y),  # Góc trái
-                (pointer_x + 10, pointer_y)  # Góc phải
+                (pointer_x, pointer_y + 10),
+                (pointer_x - 10, pointer_y),
+                (pointer_x + 10, pointer_y)
             ]
             pygame.draw.polygon(self.screen, (255, 0, 0), triangle_points)
 
