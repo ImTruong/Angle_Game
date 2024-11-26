@@ -11,6 +11,8 @@ while True:
 
     if selected_option == "start":
         selected_map = map_selection_menu()
+        if selected_map == "back":
+            continue
         if selected_map == "SeaMap":
             game_map = SeaMap(0, 0)
         elif selected_map == "MoonMap":
