@@ -26,9 +26,11 @@ def main_game_loop(game_map):
     character_angle_line_image = pygame.image.load("image/Dotted_Line_Angle.png").convert_alpha()
     character_angle_line_image = pygame.transform.scale(character_angle_line_image, (89, 10))
     freeze_image = pygame.transform.scale(pygame.image.load("image/freeze.png").convert_alpha(), (CHARACTER_WIDTH*2, CHARACTER_HEIGHT*2))
-    player1 = Character(character_display_image, character_real_image, 800, 70, CHARACTER_WIDTH, CHARACTER_HEIGHT)
-    player2 = Character(character_display_image, character_real_image, 400, 70, CHARACTER_WIDTH, CHARACTER_HEIGHT)
+    player1 = Character(character_display_image, character_real_image, 0,0,CHARACTER_WIDTH, CHARACTER_HEIGHT)
+    player2 = Character(character_display_image, character_real_image, 0,0,CHARACTER_WIDTH, CHARACTER_HEIGHT)
 
+    player1.rect.x, player1.rect.y = game_map.spawn_rand_point(player1)
+    player2.rect.x, player2.rect.y = game_map.spawn_rand_point(player2)
 
     characters = pygame.sprite.Group()
     characters.add(player1)
@@ -60,7 +62,10 @@ def main_game_loop(game_map):
         current_player.speed = DEFAULT_CHARACTER_SPEED
         if current_player.freeze > 0:
             current_player.freeze -= 1
-            switch_turn()
+            if not current_player.freeze == 0:
+                switch_turn()
+
+
 
     def handle_movement(current_character):
         nonlocal move_left, move_right, move_up, move_down, angle_adjust, shooting, charging, charging_status
@@ -199,10 +204,13 @@ def main_game_loop(game_map):
                         for character in characters:
                             if character.check_collision_with_explode_point(bullet, bullet.rect.center):
                                 bullet.hit_target = True
-                                character.HP -= BULLET_DAMAGE
-                                if character.HP <= 0:
-                                    winner = "Player 1" if character == player2 else "Player 2"
-                                    game_over = True
+                                if (character.freeze > 0):
+                                    character.freeze = 0
+                                else:
+                                    character.HP -= BULLET_DAMAGE
+                                    if character.HP <= 0:
+                                        winner = "Player 1" if character == player2 else "Player 2"
+                                        game_over = True
                     elif isinstance(bullet, TeleportBullet):
                         current_player.teleport = False
                         current_player.rect.center = bullet.rect.center
@@ -230,7 +238,7 @@ def main_game_loop(game_map):
                         current_player.frozen_bullet = False
                         for character in characters:
                             if character.check_collision_with_explode_point(bullet, bullet.rect.center):
-                                character.freeze = 2
+                                character.freeze = 3
                     bullet.kill()
                 delay_time = pygame.time.get_ticks()
                 start_ticks = pygame.time.get_ticks()

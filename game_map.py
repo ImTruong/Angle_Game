@@ -1,3 +1,5 @@
+import random
+
 from constants import *
 
 class GameMap(pygame.sprite.Sprite):
@@ -27,6 +29,23 @@ class GameMap(pygame.sprite.Sprite):
         pygame.draw.circle(self.image, (255, 255, 255, 0), explosion_point, EXPLODE_RADIUS)
         self.mask = pygame.mask.from_surface(self.image)
 
+    def spawn_rand_point(self, other_obj):
+        while True:
+            x = random.randint(0, self.GAME_MAP_WIDTH - other_obj.rect.width)
+            y = random.randint(0, self.GAME_MAP_HEIGHT - other_obj.rect.height)
+
+            # Check if the character is not colliding with the map
+            if not self.mask.overlap(other_obj.mask, (x, y)):
+                # Check if there is ground below the character
+                ground_below = False
+                for i in range(y + other_obj.rect.height, self.GAME_MAP_HEIGHT):
+                    if self.mask.get_at((x, i)):
+                        ground_below = True
+                        break
+                if ground_below:
+                    return x, y
+                else:
+                    return self.spawn_rand_point(other_obj)
 
 class SeaMap(GameMap):
     def __init__(self, x, y):
