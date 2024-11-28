@@ -1,5 +1,6 @@
 import math
 from sprite_animated import SpriteAnimated
+from bullet import *
 from constants import *
 
 class Character(pygame.sprite.Sprite):
@@ -19,6 +20,8 @@ class Character(pygame.sprite.Sprite):
         self.teleport = True
         self.freeze = 0
         self.frozen_bullet = True
+        self.heal_bullet = True
+        self.continuous_bullet = True
         self.shooting = False
         self.HP = 100
         self.max_HP = 100
@@ -164,14 +167,32 @@ class Character(pygame.sprite.Sprite):
             angle += self.angle(game_map)
         else:
             angle += -self.angle(game_map)
+
         direction = 1 if self.face_right else -1
-        theta, accel, t = angle * math.pi / 180, BULLET_ACCEL, bullet.time
-        scale = POWER_SCALE
-        V = scale * self.power
-        x0, y0 = self.rect.topleft if not self.face_right else self.rect.topright
-        x = x0 + direction * V * math.cos(theta) * t
-        y = y0 + (-V * math.sin(theta) * t + accel * t ** 2 / 2)
-        bullet.update(x, y)
+
+        if isinstance(bullet, ContinuousBullet):
+            theta = angle * math.pi / 180
+            t = bullet.time
+            x0, y0 = self.rect.center
+            V = 50
+            x0, y0 = (
+                self.rect.topleft if not self.face_right else self.rect.topright
+            )
+            x = x0 + direction * V * math.cos(theta) * t
+            y = y0 + -V * math.sin(theta) * t
+            bullet.update(x, y)
+        else:
+            theta = angle * math.pi / 180
+            accel = BULLET_ACCEL
+            t = bullet.time
+            scale = POWER_SCALE
+            V = scale * self.power
+            x0, y0 = (
+                self.rect.topleft if not self.face_right else self.rect.topright
+            )
+            x = x0 + direction * V * math.cos(theta) * t
+            y = y0 + (-V * math.sin(theta) * t + accel * t ** 2 / 2)
+            bullet.update(x, y)
 
     def check_collision_with_explode_point(self, bullet, explosion_center):
         explosion_mask = pygame.mask.Mask((EXPLODE_RADIUS * 2, EXPLODE_RADIUS * 2), fill=True)
