@@ -147,11 +147,10 @@ def main_game_loop(game_map,number_of_player):
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     stop_menu()
-            if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     jump_sfx.play()
                     move_sfx.stop()
-                    if not current_player.jumping and current_player.on_ground:
+                    if current_player.on_ground:
                         current_player.jumping = True
                         current_player.on_ground = False
                 if event.key == pygame.K_UP:
