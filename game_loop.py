@@ -58,6 +58,8 @@ def main_game_loop(game_map,number_of_player):
     continous_bullet = 0
     start_ticks = pygame.time.get_ticks()
     time_left_text = Text(f"Time Left: {time_limit}", 100, 50, size=30, color=BLACK)
+    selected_skill = None
+    not_available_timer = 0
 
     def switch_turn():
         nonlocal current_player
@@ -166,18 +168,37 @@ def main_game_loop(game_map,number_of_player):
                     charging = True
                 if event.key == pygame.K_LALT:
                     mouse_view_active = True if not mouse_view_active else False
-                if event.key == pygame.K_1 and current_player.teleport:
-                    teleport = True if not teleport else False
-                if event.key == pygame.K_2 and current_player.frozen_bullet:
-                    frozen_bullet = True if not frozen_bullet else False
-                if event.key == pygame.K_3 and current_player.heal_bullet:
-                    heal_bullet = True if not heal_bullet else False
-                if event.key == pygame.K_4 and current_player.continuous_bullet:
-                    continous_bullet = 1
-                    current_player.continuous_bullet = False
-                    bullet = ContinuousBullet(current_player)
-                    shoot_sfx.play()
-                    shooting = True
+                if event.key == pygame.K_1:
+                    if not current_player.teleport:  # Nếu đã dùng chiêu
+                        not_available_timer = pygame.time.get_ticks()
+                    else:
+                        selected_skill = "Teleport"
+                        teleport = not teleport
+
+                if event.key == pygame.K_2:
+                    if not current_player.frozen_bullet:
+                        not_available_timer = pygame.time.get_ticks()
+                    else:
+                        selected_skill = "Frozen Bullet"
+                        frozen_bullet = not frozen_bullet
+
+                if event.key == pygame.K_3:
+                    if not current_player.heal_bullet:
+                        not_available_timer = pygame.time.get_ticks()
+                    else:
+                        selected_skill = "Heal Bullet"
+                        heal_bullet = not heal_bullet
+
+                if event.key == pygame.K_4:
+                    if not current_player.continuous_bullet:
+                        not_available_timer = pygame.time.get_ticks()
+                    else:
+                        selected_skill = "Continuous Bullet"
+                        continous_bullet = 1
+                        current_player.continuous_bullet = False
+                        bullet = ContinuousBullet(current_player)
+                        shoot_sfx.play()
+                        shooting = True
 
             if event.type == pygame.KEYUP:
                 move_sfx.stop()
@@ -305,6 +326,7 @@ def main_game_loop(game_map,number_of_player):
             character.draw_turn_marker(f"P{list_of_character.index(character) + 1}", character == current_player,camera)
             if character == current_player:
                 character.draw_power_bar()
+                character.draw_skills(screen,selected_skill)
 
         if (not shooting and not charging):
             time_left_text.draw()

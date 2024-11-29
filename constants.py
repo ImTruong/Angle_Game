@@ -37,6 +37,8 @@ BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 DARK_GREEN = (0, 200, 0)
+ORANGE = (255, 165, 0)
+SKILL_BOX_SIZE = 50
 
 screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
 clock = pygame.time.Clock()

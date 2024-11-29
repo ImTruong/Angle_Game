@@ -1,4 +1,8 @@
 import math
+
+import pygame.image
+
+from SkillBox import SkillBox
 from sprite_animated import SpriteAnimated
 from bullet import *
 from constants import *
@@ -30,6 +34,29 @@ class Character(pygame.sprite.Sprite):
         self.height = height
         self.character_animation = SpriteAnimated(screen, "idle", 0.1)
         self.turn = False
+
+        # Khởi tạo các kỹ năng
+        tele_img = pygame.image.load("image/teleport_skill.jpg")
+        freeze_img = pygame.image.load("image/freeze_skill.png")
+        heal_img = pygame.image.load("image/healing.jpg")
+        continous_img = pygame.image.load("image/continuous_bullet.png")
+
+
+        skill1 = SkillBox(20, 100, SKILL_BOX_SIZE, SKILL_BOX_SIZE, tele_img, "Teleport")
+        skill2 = SkillBox(20, 175, SKILL_BOX_SIZE, SKILL_BOX_SIZE, freeze_img, "Frozen Bullet")
+        skill3 = SkillBox(20, 250, SKILL_BOX_SIZE, SKILL_BOX_SIZE, heal_img, "Heal Bullet")
+        skill4 = SkillBox(20, 325, SKILL_BOX_SIZE, SKILL_BOX_SIZE, continous_img, "Continuous Bullet")
+
+        self.skills = [skill1, skill2, skill3, skill4]
+
+    def draw_skills(self, screen, selected_skill):
+        """Vẽ tất cả kỹ năng của nhân vật."""
+        for skill in self.skills:
+            skill_name = skill.skill_name.lower().replace(" ", "_")
+            used = not getattr(self, skill_name, True)  # Chiêu đã dùng nếu trạng thái là False
+            selected = skill.skill_name == selected_skill  # Được chọn nếu khớp với selected_skill
+            skill.draw(screen, selected=selected, used=used)
+
     def angle(self, game_map):
         if not self.on_ground:
             return 0
