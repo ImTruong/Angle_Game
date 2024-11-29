@@ -256,23 +256,35 @@ class Character(pygame.sprite.Sprite):
             text_rect = text_surface.get_rect(center=(x_position, power_bar_y + POWER_BAR_HEIGHT + 10))
             screen.blit(text_surface, text_rect.topleft)
 
-    def draw_turn_marker(self,player_name,is_turn, camera):
-        if is_turn :
-            # Tọa độ của tam giác
-            pointer_x = self.rect.centerx
-            pointer_y = self.rect.top - 30
+    def draw_turn_marker(self, player_name, is_turn, camera):
+        """Vẽ chỉ báo lượt chơi phía trên nhân vật."""
+        # Tọa độ của tam giác
+        pointer_x = self.rect.centerx
+        pointer_y = self.rect.top - 30
 
-            pointer_x, pointer_y = camera.apply((pointer_x, pointer_y))
+        # Áp dụng camera
+        pointer_x, pointer_y = camera.apply((pointer_x, pointer_y))
 
-            triangle_points = [
-                (pointer_x, pointer_y + 10),
-                (pointer_x - 10, pointer_y),
-                (pointer_x + 10, pointer_y)
-            ]
-            pygame.draw.polygon(self.screen, (255, 0, 0), triangle_points)
+        # Cài đặt màu sắc và font tùy thuộc vào lượt
+        if is_turn:
+            triangle_color = (255, 0, 0)  # Tam giác màu đỏ
+            text_color = (0, 0, 0)  # Chữ màu đen
+        else:
+            triangle_color = (169, 169, 169)  # Tam giác màu xám (DarkGray)
+            text_color = (105, 105, 105)  # Chữ màu xám (DimGray)
+
+        triangle_points = [
+            (pointer_x, pointer_y + 10),
+            (pointer_x - 10, pointer_y),
+            (pointer_x + 10, pointer_y)
+        ]
+        pygame.draw.polygon(self.screen, triangle_color, triangle_points)
 
 
-            font = pygame.font.Font(None, 24)  # Font chữ
-            text_surface = font.render(player_name, True, (0, 0, 0))  # Màu đen
-            text_rect = text_surface.get_rect(center=(pointer_x, pointer_y - 10))
-            self.screen.blit(text_surface, text_rect)
+        font = pygame.font.Font(None, PLAY_MARKER_FONT_SIZE)
+
+        text_surface = font.render(player_name, True, text_color)
+        text_rect = text_surface.get_rect(center=(pointer_x, pointer_y - 10))
+        self.screen.blit(text_surface, text_rect)
+
+
