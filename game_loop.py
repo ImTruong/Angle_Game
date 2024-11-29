@@ -182,7 +182,7 @@ def main_game_loop(game_map,number_of_player):
                     continous_bullet = False
                     skill_active = False
 
-                elif event.key == pygame.K_2 and not skill_active:
+                if event.key == pygame.K_2 and not skill_active:
                     selected_skill = "Frozen Bullet"
                     teleport = False
                     frozen_bullet = True
@@ -190,7 +190,7 @@ def main_game_loop(game_map,number_of_player):
                     continous_bullet = False
                     skill_active = False
 
-                elif event.key == pygame.K_3 and not skill_active:
+                if event.key == pygame.K_3 and not skill_active:
                     selected_skill = "Heal Bullet"
                     teleport = False
                     frozen_bullet = False
@@ -198,8 +198,7 @@ def main_game_loop(game_map,number_of_player):
                     continous_bullet = False
                     skill_active = False
 
-                elif event.key == pygame.K_4 and not skill_active:
-                    # Chỉ kích hoạt chiêu khi nó chưa hoạt động
+                if event.key == pygame.K_4 and not skill_active:
                     selected_skill = "Continuous Bullet"
                     teleport = False
                     frozen_bullet = False
@@ -210,43 +209,47 @@ def main_game_loop(game_map,number_of_player):
                     shooting = True
                     skill_active = True
 
-                elif event.key == pygame.K_5:
-                    # Hủy mọi kỹ năng
+                if event.key == pygame.K_5 :
                     selected_skill = None
+                    print(selected_skill)
                     teleport = False
                     frozen_bullet = False
                     heal_bullet = False
                     continous_bullet = False
                     skill_active = False
 
-                if event.type == pygame.KEYUP:
-                    move_sfx.stop()
-                    jump_sfx.stop()
-                    if event.key == pygame.K_UP:
-                        move_up = False
-                    if event.key == pygame.K_DOWN:
-                        move_down = False
-                    if event.key == pygame.K_LEFT:
-                        move_left = False
-                    if event.key == pygame.K_RIGHT:
-                        move_right = False
-                    if event.key == pygame.K_LCTRL and current_player.on_ground:
-                        shoot_sfx.play()
-                        if not shooting:
-                            charging = False
-                            shooting = True
-                            if teleport:
-                                bullet = TeleportBullet(current_player)
-                                teleport = False
-                            elif frozen_bullet:
-                                bullet = IceBullet(current_player)
-                                frozen_bullet = False
-                            elif heal_bullet:
-                                bullet = HealBullet(current_player)
-                                heal_bullet = False
-                            else:
-                                bullet = NormalBullet(current_player)
-                            skill_active = False
+            if event.type == pygame.KEYUP:
+                move_sfx.stop()
+                jump_sfx.stop()
+                if event.key == pygame.K_UP:
+                    move_up = False
+                if event.key == pygame.K_DOWN:
+                    move_down = False
+                if event.key == pygame.K_LEFT:
+                    move_left = False
+                if event.key == pygame.K_RIGHT:
+                    move_right = False
+                if event.key == pygame.K_LCTRL and current_player.on_ground:
+                    shoot_sfx.play()
+                    if not shooting:
+                        charging = False
+                        shooting = True
+                        if selected_skill is None:
+                            bullet = NormalBullet(current_player)
+                        elif teleport:
+                            bullet = TeleportBullet(current_player)
+                            teleport = False
+                        elif frozen_bullet:
+                            bullet = IceBullet(current_player)
+                            frozen_bullet = False
+                        elif heal_bullet:
+                            bullet = HealBullet(current_player)
+                            heal_bullet = False
+                        elif continous_bullet:
+                            bullet = ContinuousBullet(current_player)
+                        else :
+                            bullet = NormalBullet(current_player)
+                        skill_active = False
 
         if not shooting and delay_time is None and not mouse_view_active:
             camera.update(current_player)
