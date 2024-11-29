@@ -3,7 +3,7 @@ import pygame
 from constants import RED, ORANGE
 
 
-class SkillBox:
+class skill_box:
     def __init__(self, x, y, width, height, skill_image, skill_name):
         self.rect = pygame.Rect(x, y, width, height)
         self.skill_image = skill_image

@@ -2,7 +2,7 @@ import math
 
 import pygame.image
 
-from SkillBox import SkillBox
+from skill_box import skill_box
 from sprite_animated import SpriteAnimated
 from bullet import *
 from constants import *
@@ -42,10 +42,10 @@ class Character(pygame.sprite.Sprite):
         continous_img = pygame.image.load("image/continuous_bullet.png")
 
 
-        skill1 = SkillBox(20, 100, SKILL_BOX_SIZE, SKILL_BOX_SIZE, tele_img, "Teleport")
-        skill2 = SkillBox(20, 175, SKILL_BOX_SIZE, SKILL_BOX_SIZE, freeze_img, "Frozen Bullet")
-        skill3 = SkillBox(20, 250, SKILL_BOX_SIZE, SKILL_BOX_SIZE, heal_img, "Heal Bullet")
-        skill4 = SkillBox(20, 325, SKILL_BOX_SIZE, SKILL_BOX_SIZE, continous_img, "Continuous Bullet")
+        skill1 = skill_box(20, 100, SKILL_BOX_SIZE, SKILL_BOX_SIZE, tele_img, "Teleport")
+        skill2 = skill_box(20, 175, SKILL_BOX_SIZE, SKILL_BOX_SIZE, freeze_img, "Frozen Bullet")
+        skill3 = skill_box(20, 250, SKILL_BOX_SIZE, SKILL_BOX_SIZE, heal_img, "Heal Bullet")
+        skill4 = skill_box(20, 325, SKILL_BOX_SIZE, SKILL_BOX_SIZE, continous_img, "Continuous Bullet")
 
         self.skills = [skill1, skill2, skill3, skill4]
 
