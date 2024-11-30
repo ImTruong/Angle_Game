@@ -257,7 +257,7 @@ def main_game_loop(game_map,number_of_player):
                 camera.update(bullet)
             bullet.draw(camera)
             bullet.time += BULLET_SPEED
-            if bullet.rect.right < 0 or bullet.rect.left > GAME_MAP_WIDTH or bullet.rect.top > GAME_MAP_HEIGHT or bullet.mask.overlap(game_map.mask, (game_map.rect.x - bullet.rect.x, game_map.rect.y - bullet.rect.y)):
+            if bullet.rect.right < 0 or bullet.rect.left > GAME_MAP_WIDTH or bullet.rect.top > GAME_MAP_HEIGHT or bullet.mask.overlap(game_map.mask, (game_map.rect.x - bullet.rect.x, game_map.rect.y - bullet.rect.y)) or (isinstance(bullet, ContinuousBullet) and bullet.rect.bottom < 0):
                 if pygame.sprite.collide_mask(bullet, game_map):
                     explosion_sfx.play()
                     if isinstance(bullet, NormalBullet) or isinstance(bullet, ContinuousBullet):
