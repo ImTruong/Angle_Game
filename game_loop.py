@@ -26,6 +26,8 @@ def main_game_loop(game_map,number_of_player):
     character_real_image = pygame.transform.scale(pygame.image.load("image/character_block.png").convert_alpha(), (CHARACTER_WIDTH, CHARACTER_HEIGHT))
     character_angle_line_image = pygame.image.load("image/Dotted_Line_Angle.png").convert_alpha()
     character_angle_line_image = pygame.transform.scale(character_angle_line_image, (89, 10))
+    character_limit_angle_line_image = pygame.image.load("image/limit_angle_line.png").convert_alpha()
+    character_limit_angle_line_image = pygame.transform.scale(character_limit_angle_line_image, (89, 10))
     freeze_image = pygame.transform.scale(pygame.image.load("image/freeze.png").convert_alpha(), (CHARACTER_WIDTH*2, CHARACTER_HEIGHT*2))
 
     characters = pygame.sprite.Group()
@@ -131,7 +133,6 @@ def main_game_loop(game_map,number_of_player):
         return None
 
     while not game_over:
-
         if check_team_status() is not None and delay_time is None:
             game_over = True
             end_menu(check_team_status())
@@ -174,49 +175,38 @@ def main_game_loop(game_map,number_of_player):
                 if event.key == pygame.K_LALT:
                     mouse_view_active = not mouse_view_active
 
-                if event.key == pygame.K_1 and not skill_active:
-                    selected_skill = "Teleport"
-                    teleport = True
+                if event.key == pygame.K_1 and not skill_active and current_player.teleport == True:
+                    selected_skill = "Teleport" if selected_skill != "Teleport" else None
+                    teleport = True if teleport is False else False
                     frozen_bullet = False
                     heal_bullet = False
-                    continous_bullet = False
                     skill_active = False
 
-                if event.key == pygame.K_2 and not skill_active:
-                    selected_skill = "Frozen Bullet"
+                if event.key == pygame.K_2 and not skill_active and current_player.frozen_bullet == True:
+                    selected_skill = "Frozen Bullet" if selected_skill != "Frozen Bullet" else None
                     teleport = False
-                    frozen_bullet = True
+                    frozen_bullet = True if frozen_bullet is False else False
                     heal_bullet = False
-                    continous_bullet = False
                     skill_active = False
 
-                if event.key == pygame.K_3 and not skill_active:
-                    selected_skill = "Heal Bullet"
+                if event.key == pygame.K_3 and not skill_active and current_player.heal_bullet == True:
+                    selected_skill = "Heal Bullet" if selected_skill != "Heal Bullet" else None
                     teleport = False
                     frozen_bullet = False
-                    heal_bullet = True
-                    continous_bullet = False
+                    heal_bullet = True if heal_bullet is False else False
                     skill_active = False
 
-                if event.key == pygame.K_4 and not skill_active:
+                if event.key == pygame.K_4 and not skill_active and current_player.continuous_bullet == True and current_player.on_ground:
                     selected_skill = "Continuous Bullet"
                     teleport = False
                     frozen_bullet = False
                     heal_bullet = False
-                    continous_bullet = True
+                    continous_bullet = 1
+                    current_player.continuous_bullet = False
                     bullet = ContinuousBullet(current_player)
                     shoot_sfx.play()
                     shooting = True
                     skill_active = True
-
-                if event.key == pygame.K_5 :
-                    selected_skill = None
-                    print(selected_skill)
-                    teleport = False
-                    frozen_bullet = False
-                    heal_bullet = False
-                    continous_bullet = False
-                    skill_active = False
 
             if event.type == pygame.KEYUP:
                 move_sfx.stop()
@@ -234,9 +224,7 @@ def main_game_loop(game_map,number_of_player):
                     if not shooting:
                         charging = False
                         shooting = True
-                        if selected_skill is None:
-                            bullet = NormalBullet(current_player)
-                        elif teleport:
+                        if teleport:
                             bullet = TeleportBullet(current_player)
                             teleport = False
                         elif frozen_bullet:
@@ -245,7 +233,7 @@ def main_game_loop(game_map,number_of_player):
                         elif heal_bullet:
                             bullet = HealBullet(current_player)
                             heal_bullet = False
-                        elif continous_bullet:
+                        elif continous_bullet != 0:
                             bullet = ContinuousBullet(current_player)
                         else :
                             bullet = NormalBullet(current_player)
@@ -284,6 +272,7 @@ def main_game_loop(game_map,number_of_player):
                                     character.HP -= NORMAL_BULLET_DAMAGE if isinstance(bullet, NormalBullet) else CONTINUOUS_BULLET_DAMAGE
                                     if character.HP <= 0:
                                         character.kill()
+
                     elif isinstance(bullet, TeleportBullet):
                         current_player.teleport = False
                         current_player.rect.center = bullet.rect.center
@@ -328,7 +317,11 @@ def main_game_loop(game_map,number_of_player):
                     continous_bullet += 1
                     shooting = True
                     bullet = ContinuousBullet(current_player)
+                    if continous_bullet > 2:
+                        continous_bullet = 0
                 else:
+                    skill_active = False
+                    selected_skill = None
                     switch_turn()
         if delay_time is not None:
             if pygame.time.get_ticks() - delay_time >= DELAY_BETWEEN:
@@ -345,7 +338,7 @@ def main_game_loop(game_map,number_of_player):
                 character.HP = 0
                 character.kill()
             character_angle = character.angle(game_map)
-            character.draw(screen, camera, character_angle, current_player, (move_left or move_right), shooting, character_angle_line_image, charging, delay_time, freeze_image)
+            character.draw(screen, camera, character_angle, current_player, (move_left or move_right), shooting, character_angle_line_image, character_limit_angle_line_image, charging, delay_time, freeze_image)
             character.draw_health_bar(camera)
             character.draw_turn_marker(f"P{list_of_character.index(character) + 1}", character == current_player,camera)
             if character == current_player:

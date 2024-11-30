@@ -78,7 +78,7 @@ class Character(pygame.sprite.Sprite):
         slope = (left_y_point - right_y_point) / (self.rect.left - self.rect.right)
         return -math.atan(slope) * 180 / (math.pi)
 
-    def draw(self, screen, camera, angle, current_player, moving, shooting, character_angle_line_image, charging, delay_time, freeze_image):
+    def draw(self, screen, camera, angle, current_player, moving, shooting, character_angle_line_image, character_limit_angle_line_image, charging, delay_time, freeze_image):
         self.display_image = self.character_animation.image
         flipped_image = pygame.transform.flip(self.display_image, not self.face_right, False)
         rotated_image = pygame.transform.rotate(flipped_image, angle)
@@ -88,22 +88,46 @@ class Character(pygame.sprite.Sprite):
 
         if not moving and current_player == self and not shooting and not self.jumping and delay_time is None:
             rotated_angle = angle + self.shoot_angle if self.face_right else angle - self.shoot_angle
-
+            min_rotated_angle = angle + MIN_SHOOT_ANGLE_DISPLAY if self.face_right else angle - MIN_SHOOT_ANGLE_DISPLAY
+            max_rotated_angle = angle + MAX_SHOOT_ANGLE_DISPLAY if self.face_right else angle - MAX_SHOOT_ANGLE_DISPLAY
             rotated_angle_line_image = pygame.transform.rotate(character_angle_line_image, rotated_angle)
+            min_rotated_angle_line_image = pygame.transform.rotate(character_limit_angle_line_image, min_rotated_angle)
+            max_rotated_angle_line_image = pygame.transform.rotate(character_limit_angle_line_image, max_rotated_angle)
             angle_line_rect = rotated_angle_line_image.get_rect(center=self.rect.center)
+            max_angle_line_rect = max_rotated_angle_line_image.get_rect(center=self.rect.center)
+            min_angle_line_rect = min_rotated_angle_line_image.get_rect(center=self.rect.center)
 
             angle_line_rect.center = camera.apply(self).center
+            max_angle_line_rect.center = camera.apply(self).center
+            min_angle_line_rect.center = camera.apply(self).center
 
             if (self.face_right and rotated_angle < 90) or (not self.face_right and rotated_angle < -90):
                 cover_rect = pygame.Rect(0, 0, rotated_angle_line_image.get_width() // 2,
                                          rotated_angle_line_image.get_height())
+                min_cover_rect = pygame.Rect(0, 0, min_rotated_angle_line_image.get_width() // 2,
+                                         min_rotated_angle_line_image.get_height())
+                max_cover_rect = pygame.Rect(0, 0, max_rotated_angle_line_image.get_width() // 2,
+                                            max_rotated_angle_line_image.get_height())
             else:
                 cover_rect = pygame.Rect(rotated_angle_line_image.get_width() // 2, 0,
                                          rotated_angle_line_image.get_width() // 2,
                                          rotated_angle_line_image.get_height())
+                min_cover_rect = pygame.Rect(min_rotated_angle_line_image.get_width() // 2, 0,
+                                            min_rotated_angle_line_image.get_width() // 2,
+                                            min_rotated_angle_line_image.get_height())
+                max_cover_rect = pygame.Rect(max_rotated_angle_line_image.get_width() // 2, 0,
+                                            max_rotated_angle_line_image.get_width() // 2,
+                                            max_rotated_angle_line_image.get_height())
 
             pygame.draw.rect(rotated_angle_line_image, (0, 0, 0, 0), cover_rect)
+            pygame.draw.rect(min_rotated_angle_line_image, (0, 0, 0, 0), min_cover_rect)
+            pygame.draw.rect(max_rotated_angle_line_image, (0, 0, 0, 0), max_cover_rect)
             screen.blit(rotated_angle_line_image, angle_line_rect.topleft)
+
+            min_rotated_angle_line_image.set_alpha(70)
+            max_rotated_angle_line_image.set_alpha(70)
+            screen.blit(min_rotated_angle_line_image, min_angle_line_rect.topleft)
+            screen.blit(max_rotated_angle_line_image, max_angle_line_rect.topleft)
 
         if not moving and current_player == self and not shooting and not self.jumping and not self.falling and not charging:
             self.character_animation.state = "idle"
