@@ -5,7 +5,7 @@ import pygame.mouse
 from bullet import *
 from random import uniform
 import pygame.mixer
-from Sound import *
+from sound import *
 from character import Character
 from particle import Particle
 from text import Text
