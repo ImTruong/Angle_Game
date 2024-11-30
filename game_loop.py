@@ -133,9 +133,12 @@ def main_game_loop(game_map,number_of_player):
         return None
 
     while not game_over:
-        if check_team_status() is not None and delay_time is None:
+
+        team_status = check_team_status()
+        if team_status is not None and delay_time is None:
             game_over = True
-            end_menu(check_team_status())
+            end_menu(team_status)
+            break
         seconds = (pygame.time.get_ticks() - start_ticks) / 1000
         time_left = time_limit - seconds
         time_left_text.text = time_left_text.font.render(f"Time Left: {int(time_left)}", True, BLACK)
